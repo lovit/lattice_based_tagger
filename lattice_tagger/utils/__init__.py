@@ -1,5 +1,6 @@
 from .dictionary import BaseMorphemeDictionary
 from .dictionary import DemoMorphemeDictionary
+from .dictionary import DemoWordDictionary
 from .dictionary import Word
 from .dictionary import WordDictionary
 from .dictionary import MorphemeDictionary

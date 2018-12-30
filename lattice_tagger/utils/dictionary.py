@@ -152,6 +152,16 @@ class MorphemeDictionary(WordDictionary):
                     yield (stem, Adjective), (eomi, Eomi)
 
 
+class DemoWordDictionary(WordDictionary):
+    """
+    Word dictionary for demo and development
+    """
+
+    def __init__(self):
+        tag_to_words = load_dictionary('%s/resources/demo_word/' % installpath)
+        super().__init__(tag_to_words)
+
+
 class DemoMorphemeDictionary(MorphemeDictionary):
     """
     Morpheme dictionary for demo and development
