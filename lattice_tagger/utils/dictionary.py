@@ -115,7 +115,7 @@ class MorphemeDictionary(WordDictionary):
     def __init__(self, tag_to_morph, surface_to_canon=None):
         super().__init__(tag_to_morph)
         if surface_to_canon is None:
-            surface_to_canon = _get_default_rules()
+            surface_to_canon = {}
         self.surface_to_canon = surface_to_canon
 
     def as_Word(self, word):
@@ -151,21 +151,29 @@ class MorphemeDictionary(WordDictionary):
                 if self.check(stem, Adjective):
                     yield (stem, Adjective), (eomi, Eomi)
 
+
+class DemoMorphemeDictionary(MorphemeDictionary):
+    """
+    Morpheme dictionary for demo and development
+    """
+
+    def __init__(self):
+        tag_to_morphs = load_dictionary('%s/resources/demo_morph/' % installpath)
+        surface_to_canon = load_rules('%s/resources/demo_morph/rules.json' % installpath)
+        super().__init__(tag_to_morphs, surface_to_canon)
+
+
 class BaseMorphemeDictionary(MorphemeDictionary):
     """
     Morpheme dictionary trained from Sejong Corpus
     """
 
     def __init__(self):
-        tag_to_morphs = load_base_morphs_dictionary()
-        surface_to_canon = load_base_surface_to_canon_rules()
+        tag_to_morphs = load_dictionary('%s/resources/base/' % installpath)
+        surface_to_canon = load_rules('%s/resources/base/rules.json' % installpath)
         super().__init__(tag_to_morphs, surface_to_canon)
 
-def _get_default_rules():
-    path = '%s/resources/demo/rules.json' % installpath
-    return load_rules(path)
-
-def load_base_morphs_dictionary():
+def load_dictionary(directory):
     def load(path):
         with open(path, encoding='utf-8') as f:
             words = {word.split()[0] for word in f}
@@ -174,10 +182,6 @@ def load_base_morphs_dictionary():
     def parse_tag(path):
         return path.split('/')[-1][:-4]
 
-    paths = glob('%s/resources/base/*.txt' % installpath)
+    paths = glob('%s/*.txt' % directory)
     tag_to_morphs = {parse_tag(path):load(path) for path in paths}
     return tag_to_morphs
-
-def load_base_surface_to_canon_rules():
-    path = '%s/resources/base/rules.json' % installpath
-    return load_rules(path)
