@@ -1,17 +1,21 @@
 from collections import namedtuple
 from lattice_tagger.tagset import *
 
-class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 b m e len')):
+class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 len')):
     """
     Usage
     -----
-        >>> word = Word('아이오아이는', '아이오아이', '는', 'Noun', 'Josa', 0, 5, 6, 6)
+        >>> word = Word('아이오아이', '아이오아이', None, 'Noun', None, 5)
         >>> print(word)
-        $ Word(아이오아이는, 아이오아이/Noun + 는/Josa, b=0 m=5 e=6)
+        $ Word(아이오아이, 아이오아이/Noun, len=5)
 
-        >>> word = Word('아이오아이', '아이오아이', None, 'Noun', None, 0, 5, 5, 5)
+        >>> word = Word('가고있는', '가고있', '는', 'Verb', 'Eomi', 4)
         >>> print(word)
-        $ Word(아이오아이, 아이오아이/Noun, b=0, e=5)
+        $ Word(가고있는, 가고있/Verb + 는/Eomi, len=4)
+
+        >>> word = Word('간', '가', 'ㄴ', 'Verb', 'Eomi', 1)
+        >>> print(word)
+        $ Word(간, 가/Verb + ㄴ/Eomi, len=1)
 
     """
 
@@ -19,11 +23,10 @@ class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 b m e len')):
         return self.__str__()
     def __str__(self):
         if self.morph1:
-            args = (self.word, self.morph0, self.tag0,
-                    self.morph1, self.tag1, self.b, self.m, self.e)
-            return 'Word(%s, %s/%s + %s/%s, b=%d m=%d e=%d)' % args
-        args = (self.word, self.morph0, self.tag0, self.b, self.e)
-        return 'Word(%s, %s/%s, b=%d, e=%d)' % args
+            args = (self.word, self.morph0, self.tag0, self.morph1, self.tag1, self.len)
+            return 'Word(%s, %s/%s + %s/%s, len=%d)' % args
+        args = (self.word, self.morph0, self.tag0, self.len)
+        return 'Word(%s, %s/%s, len=%d)' % args
 
 
 class WordDictionary:
@@ -46,6 +49,12 @@ class WordDictionary:
 
     def __init__(self, tag_to_morph):
         self.tag_to_morph = tag_to_morph
+
+    def as_Word(self, word):
+        words = [
+            Word(word, word, None, tag, None, len(word))
+            for tag in self.get_tags(word)]
+        return words
 
     def check(self, word, tag):
         return word in self.tag_to_morph.get(tag, {})
@@ -97,6 +106,15 @@ class MorphemeDictionary(WordDictionary):
         if surface_to_canon is None:
             surface_to_canon = _get_default_rules()
         self.surface_to_canon = surface_to_canon
+
+    def as_Word(self, word):
+        length = len(word)
+        words = [
+            Word(word, word, None, tag, None, length)
+            for tag in self.get_tags(word)]
+        for (m0, t0), (m1, t1) in self.lemmatize(word):
+            words.append(Word(word, m0, m1, t0, t1, length))
+        return words
 
     def lemmatize(self, word):
         lemmas = []
