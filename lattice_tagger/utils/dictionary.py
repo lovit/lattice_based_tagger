@@ -1,15 +1,30 @@
+from collections import namedtuple
 from lattice_tagger.tagset import *
 
-def _get_default_rules():
-    rules = {
-        '했': (('하', '았'),),
-        '갔': (('가', '았'),),
-        '입': (('이', 'ㅂ'),),
-        '있': (('이', 'ㅆ'),),
-        '였': (('이', '었'),),
-        '춥': (('추', 'ㅂ'),),
-    }
-    return rules
+class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 b m e len')):
+    """
+    Usage
+    -----
+        >>> word = Word('아이오아이는', '아이오아이', '는', 'Noun', 'Josa', 0, 5, 6, 6)
+        >>> print(word)
+        $ Word(아이오아이는, 아이오아이/Noun + 는/Josa, b=0 m=5 e=6)
+
+        >>> word = Word('아이오아이', '아이오아이', None, 'Noun', None, 0, 5, 5, 5)
+        >>> print(word)
+        $ Word(아이오아이, 아이오아이/Noun, b=0, e=5)
+
+    """
+
+    def __repr__(self):
+        return self.__str__()
+    def __str__(self):
+        if self.morph1:
+            args = (self.word, self.morph0, self.tag0,
+                    self.morph1, self.tag1, self.b, self.m, self.e)
+            return 'Word(%s, %s/%s + %s/%s, b=%d m=%d e=%d)' % args
+        args = (self.word, self.morph0, self.tag0, self.b, self.e)
+        return 'Word(%s, %s/%s, b=%d, e=%d)' % args
+
 
 class WordDictionary:
     """
@@ -58,6 +73,7 @@ class WordDictionary:
         before = {word for word in before if not (word in words)}
         self.tag_to_morph[tag] = before
 
+
 class MorphemeDictionary(WordDictionary):
     """
     Usage
@@ -105,3 +121,15 @@ class MorphemeDictionary(WordDictionary):
                     yield (stem, Verb), (eomi, Eomi)
                 if self.check(stem, Adjective):
                     yield (stem, Adjective), (eomi, Eomi)
+
+
+def _get_default_rules():
+    rules = {
+        '했': (('하', '았'),),
+        '갔': (('가', '았'),),
+        '입': (('이', 'ㅂ'),),
+        '있': (('이', 'ㅆ'),),
+        '였': (('이', '었'),),
+        '춥': (('추', 'ㅂ'),),
+    }
+    return rules
