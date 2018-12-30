@@ -1,3 +1,4 @@
+from .dictionary import BaseMorphemeDictionary
 from .dictionary import Word
 from .dictionary import WordDictionary
 from .dictionary import MorphemeDictionary
@@ -6,3 +7,6 @@ from .lookup import LRLookup
 from .lookup import SubwordLookup
 from .lookup import Node
 from .lookup import lookup_as_edge
+from .utils import installpath
+from .utils import load_rules
+from .utils import write_rules
