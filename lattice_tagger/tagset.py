@@ -7,3 +7,6 @@ Eomi = 'Eomi'
 Adverb = 'Adverb'
 Determiner = 'Determiner'
 Exclamation = 'Exclamation'
+
+BOS = 'BOS'
+EOS = 'EOS'
