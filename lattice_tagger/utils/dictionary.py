@@ -1,5 +1,9 @@
 from collections import namedtuple
+from glob import glob
+from .utils import installpath
+from .utils import load_rules
 from lattice_tagger.tagset import *
+
 
 class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 len')):
     """
@@ -147,14 +151,33 @@ class MorphemeDictionary(WordDictionary):
                 if self.check(stem, Adjective):
                     yield (stem, Adjective), (eomi, Eomi)
 
+class BaseMorphemeDictionary(MorphemeDictionary):
+    """
+    Morpheme dictionary trained from Sejong Corpus
+    """
+
+    def __init__(self):
+        tag_to_morphs = load_base_morphs_dictionary()
+        surface_to_canon = load_base_surface_to_canon_rules()
+        super().__init__(tag_to_morphs, surface_to_canon)
 
 def _get_default_rules():
-    rules = {
-        '했': (('하', '았'),),
-        '갔': (('가', '았'),),
-        '입': (('이', 'ㅂ'),),
-        '있': (('이', 'ㅆ'),),
-        '였': (('이', '었'),),
-        '춥': (('추', 'ㅂ'),),
-    }
-    return rules
+    path = '%s/resources/demo/rules.json' % installpath
+    return load_rules(path)
+
+def load_base_morphs_dictionary():
+    def load(path):
+        with open(path, encoding='utf-8') as f:
+            words = {word.split()[0] for word in f}
+        return words
+
+    def parse_tag(path):
+        return path.split('/')[-1][:-4]
+
+    paths = glob('%s/resources/base/*.txt' % installpath)
+    tag_to_morphs = {parse_tag(path):load(path) for path in paths}
+    return tag_to_morphs
+
+def load_base_surface_to_canon_rules():
+    path = '%s/resources/base/rules.json' % installpath
+    return load_rules(path)
