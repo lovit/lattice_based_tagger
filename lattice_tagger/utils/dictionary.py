@@ -7,14 +7,17 @@ class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 len')):
     -----
         >>> word = Word('아이오아이', '아이오아이', None, 'Noun', None, 5)
         >>> print(word)
+
         $ Word(아이오아이, 아이오아이/Noun, len=5)
 
         >>> word = Word('가고있는', '가고있', '는', 'Verb', 'Eomi', 4)
         >>> print(word)
+
         $ Word(가고있는, 가고있/Verb + 는/Eomi, len=4)
 
         >>> word = Word('간', '가', 'ㄴ', 'Verb', 'Eomi', 1)
         >>> print(word)
+
         $ Word(간, 가/Verb + ㄴ/Eomi, len=1)
 
     """
@@ -42,8 +45,11 @@ class WordDictionary:
         
         >>> dictionary = WordDictionary(tag_to_words)
         >>> dictionary.check('아이', 'Noun')
+
         $ True
+
         >>> dictionary.get_tags('아이')
+
         $ ['Noun']
     """
 
@@ -97,6 +103,7 @@ class MorphemeDictionary(WordDictionary):
 
         >>> dictionary = MorphemeDictionary(tag_to_words)
         >>> dictionary.lemmatize('있다')
+
         $ [(('있', 'Adjective'), ('다', 'Eomi')), (('이', 'Adjective'), ('ㅆ다', 'Eomi'))]
 
     """

@@ -43,16 +43,20 @@ class LRLookup:
     -----
         >>> morph_dict = MorphemeDictionary(tag_to_morphs)
         >>> morph_dict.as_Word('했다')
+
         $ [Word(했다, 하/Verb + 았다/Eomi, len=2)]
 
         >>> morph_dict.as_Word('공연')
+
         $ [Word(공연, 공연/Noun, len=2)]
 
         >>> eojeol_lookup = LRLookup(morph_dict)
         >>> eojeol_lookup('공연했다')
+
         $ [(Word(공연, 공연/Noun, len=2), 0, 2), (Word(했다, 하/Verb + 았다/Eomi, len=2), 2, 4)]
 
         >>> eojeol_lookup('공연했다', offset=3)
+
         $ [(Word(공연, 공연/Noun, len=2), 3, 5), (Word(했다, 하/Verb + 았다/Eomi, len=2), 5, 7)]
 
     """
@@ -94,4 +98,38 @@ class LRLookup:
                             continue
                         words.append((l_, offset, offset + l_.len))
                         words.append((r_, offset + l_.len, offset + l_.len + r_.len))
+        return words
+
+
+class SubwordLookup:
+    """
+    Assume that eojeol has space noise.
+    Check whether subword is enrolled in dictionary for all subword.
+
+    Usage
+    -----
+        >>> eojeol_lookup = SubwordLookup(morph_dict)
+        >>> eojeol_lookup('공연을했다', offset=7)
+
+        $ [(Word(공연, 공연/Noun, len=2), 7, 9),
+           (Word(을, 을/Josa, len=1), 9, 10),
+           (Word(했다, 하/Verb + 았다/Eomi, len=2), 10, 12)]
+    """
+
+    def __init__(self, dictionary):
+        self.dictionary = dictionary
+
+    def __call__(self, eojeol, offset=0):
+        return self.lookup(eojeol, offset)
+
+    def lookup(self, eojeol, offset=0):
+        words = []
+        n = len(eojeol)
+        for b in range(n):
+            for e in range(b+1, n+1):
+                sub = eojeol[b:e]
+                words += [
+                    (word, offset + b, offset + e) for word in self.dictionary.as_Word(sub)
+                    if not (word.tag0 == Eomi)
+                ]
         return words
