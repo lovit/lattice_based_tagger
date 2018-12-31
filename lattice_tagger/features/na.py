@@ -3,6 +3,23 @@ Feature from Lattice-based Discriminative Approach for Korean Morphological Anal
 Seoung-Hoon Na, Chang-Hyun Kim, and Young-Kil Kim (2014)
 """
 
+from collections import namedtuple
+
+class Feature(namedtuple('Feature', 'ls rs lo ro w t n n_ w_')):
+    """
+    Usage
+    -----
+        >>> feature = Feature(0, 1, 0, 1, '입니다', 'Adjective', 3, 4, '입니다')
+        >>> print(feature)
+
+        $ (ls=0, rs=1, lo=0, ro=1, w=입니다, t=Adjective, n=3, n_=4, w_=입니다)
+    """
+
+    def __str__(self):
+        return self.__repr__()
+    def __repr__(self):
+        return '(%s)' % ', '.join(['{}={}'.format(k,v) for k,v in self._asdict().items()])
+
 def morph_to_feature(word, is_L=True):
     """
     ls : Is there white space before morpheme
@@ -23,13 +40,13 @@ def morph_to_feature(word, is_L=True):
         >>> morph_to_feature_na(word, is_L=True)
         >>> morph_to_feature_na(word, is_L=False)
 
-        $ (1, 0, 1, 0, '입', 'Adjective', 1, 4, '입니다')
-        $ (0, 1, 0, 1, '입니다', 'Adjective', 3, 4, '입니다')
+        $ (ls=1, rs=0, lo=1, ro=0, w=입, t=Adjective, n=1, n_=4, w_=입니다)
+        $ (ls=0, rs=1, lo=0, ro=1, w=입니다, t=Adjective, n=3, n_=4, w_=입니다)
 
         >>> word = Word('아이오아이', '아이오아이', None, 'Noun', None, 5)
         >>> morph_to_feature_na(word, is_L=True)
 
-        $ (1, 0, 0, 0, '아이오아이', 'Noun', 5, 5, '아이오아이')
+        $ (ls=1, rs=0, lo=0, ro=0, w=아이오아이, t=Noun, n=5, n_=5, w_=아이오아이)
 
     """
     if is_L:
@@ -48,7 +65,7 @@ def L_to_feature(word):
     t = word.tag0
     n_ = n + (0 if word.morph1 is None else len(word.morph1))
     w_ = word.word
-    return (ls, rs, lo, ro, w, t, n, n_, w_)
+    return Feature(ls, rs, lo, ro, w, t, n, n_, w_)
 
 def R_to_feature(word):
     n = len(word.morph1)
@@ -60,4 +77,4 @@ def R_to_feature(word):
     t = word.tag0
     n_ = n + len(word.morph0)
     w_ = word.word
-    return (ls, rs, lo, ro, w, t, n, n_, w_)
+    return Feature(ls, rs, lo, ro, w, t, n, n_, w_)
