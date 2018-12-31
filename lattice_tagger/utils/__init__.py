@@ -4,6 +4,8 @@ from .dictionary import DemoWordDictionary
 from .dictionary import Word
 from .dictionary import WordDictionary
 from .dictionary import MorphemeDictionary
+from .dictionary import str_to_morphtag
+from .dictionary import text_to_words
 from .lookup import sentence_lookup
 from .lookup import LRLookup
 from .lookup import SubwordLookup

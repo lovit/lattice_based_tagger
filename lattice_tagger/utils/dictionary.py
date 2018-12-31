@@ -4,6 +4,47 @@ from .utils import installpath
 from .utils import load_rules
 from lattice_tagger.tagset import *
 
+def str_to_morphtag(word):
+    """
+    Usage
+    -----
+        >>> word_to_morphtag('너무너무너무/Noun')
+        $ [['너무너무너무', 'Noun']]
+
+        >>> word_to_morphtag('이/Adjective+ㅂ니다/Eomi')
+        $ [['이', 'Adjective'], ['ㅂ니다', 'Eomi']]
+    """
+
+    return [morphtag.split('/',1) for morphtag in word.split('+')]
+
+def text_to_words(text):
+    """
+    Usage
+    -----
+        >>> text = '너무너무너무/Noun 는/Josa 아이오아이/Noun 의/Josa 노래/Noun 이/Adjective+ㅂ니다/Eomi'
+        >>> text_to_words(sent)
+
+        $ [Word(너무너무너무, 너무너무너무/Noun, len=6),
+           Word(는, 는/Josa, len=1),
+           Word(아이오아이, 아이오아이/Noun, len=5),
+           Word(의, 의/Josa, len=1),
+           Word(노래, 노래/Noun, len=2),
+           Word(이+ㅂ니다, 이/Adjective + ㅂ니다/Eomi, len=4)]
+    """
+
+    words = []
+    for word in text.split():
+        morphtags = str_to_morphtag(word)
+        morph0, tag0 = morphtags[0]
+        if len(morphtags) == 1:
+            word = Word(morph0, morph0, None, tag0, None, len(morph0))
+        elif len(morphtags) == 2:
+            morph1, tag1 = morphtags[1]
+            word = Word('%s+%s' % (morph0, morph1), morph0, morph1, tag0, tag1, len(morph0) + len(morph1))
+        else:
+            raise ValueError('Word (%s) consists of three or more morphemes' % word)
+        words.append(word)
+    return words
 
 class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 len')):
     """
