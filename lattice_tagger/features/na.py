@@ -9,10 +9,10 @@ class Feature(namedtuple('Feature', 'ls rs lo ro w t n n_ w_')):
     """
     Usage
     -----
-        >>> feature = Feature(0, 1, 0, 1, '입니다', 'Adjective', 3, 4, '입니다')
+        >>> feature = Feature(True, False, False, False, '아이오아이', 'Noun', 5, 5, '아이오아이')
         >>> print(feature)
 
-        $ (ls=0, rs=1, lo=0, ro=1, w=입니다, t=Adjective, n=3, n_=4, w_=입니다)
+        $ (ls=True, rs=False, lo=False, ro=False, w=아이오아이, t=Noun, n=5, n_=5, w_=아이오아이)
     """
 
     def __str__(self):
@@ -40,8 +40,8 @@ def morph_to_feature(word, is_L=True):
         >>> morph_to_feature_na(word, is_L=True)
         >>> morph_to_feature_na(word, is_L=False)
 
-        $ (ls=1, rs=0, lo=1, ro=0, w=입, t=Adjective, n=1, n_=4, w_=입니다)
-        $ (ls=0, rs=1, lo=0, ro=1, w=입니다, t=Adjective, n=3, n_=4, w_=입니다)
+        $ (ls=True, rs=False, lo=True, ro=False, w=입, t=Adjective, n=1, n_=4, w_=이)
+        $ (ls=False, rs=True, lo=False, ro=True, w=입니다, t=Adjective, n=3, n_=4, w_=ㅂ니다)
 
         >>> word = Word('아이오아이', '아이오아이', None, 'Noun', None, 5)
         >>> morph_to_feature_na(word, is_L=True)
@@ -64,7 +64,7 @@ def L_to_feature(word):
     w = word.word[:n]
     t = word.tag0
     n_ = n + (0 if word.morph1 is None else len(word.morph1))
-    w_ = word.word
+    w_ = word.morph0
     return Feature(ls, rs, lo, ro, w, t, n, n_, w_)
 
 def R_to_feature(word):
@@ -76,5 +76,5 @@ def R_to_feature(word):
     w = word.word[-n:]
     t = word.tag0
     n_ = n + len(word.morph0)
-    w_ = word.word
+    w_ = word.morph1
     return Feature(ls, rs, lo, ro, w, t, n, n_, w_)
