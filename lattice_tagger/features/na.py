@@ -57,10 +57,10 @@ def morph_to_feature(word, is_L=True):
 
 def L_to_feature(word):
     n = len(word.morph0)
-    ls = 1
-    rs = 0
-    lo = 1 if ((word.morph1) and (word.word[n-1] != word.morph0[-1])) else 0
-    ro = 0
+    ls = True
+    rs = False
+    lo = True if ((word.morph1) and (word.word[n-1] != word.morph0[-1])) else False
+    ro = False
     w = word.word[:n]
     t = word.tag0
     n_ = n + (0 if word.morph1 is None else len(word.morph1))
@@ -69,10 +69,10 @@ def L_to_feature(word):
 
 def R_to_feature(word):
     n = len(word.morph1)
-    ls = 0
-    rs = 1
-    lo = 0
-    ro = 1 if ((word.morph1) and (word.word[n-1] != word.morph0[-1])) else 0
+    ls = False
+    rs = True
+    lo = False
+    ro = True if ((word.morph1) and (word.word[n-1] != word.morph0[-1])) else False
     w = word.word[-n:]
     t = word.tag0
     n_ = n + len(word.morph0)
