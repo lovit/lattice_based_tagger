@@ -4,8 +4,39 @@ Seoung-Hoon Na, Chang-Hyun Kim, and Young-Kil Kim (2014)
 """
 
 from collections import namedtuple
-from .feature import AbstractFeatureTransformer
 from lattice_tagger.utils import text_to_words
+from .feature import AbstractFeatureTransformer
+
+
+class NaFeatureTransformer(AbstractFeatureTransformer):
+    def words_to_features(self, words):
+        morphs, morph_features = self._to_morph_features(words)
+        features = []
+        n = len(words)
+        for i in range(1, n):
+            features_ = first_order_feature(
+                morph_features[i-1],
+                morph_features[i]
+            )
+            features_ += second_order_feature(
+                morph_features[i-1],
+                morph_features[i],
+                morph_features[i+1]
+            )
+            features.append(features_)
+        return morphs[1:-1], features
+
+    def _to_morph_features(self, words):
+        features = []
+        morphs = []
+        for word in words:
+            features.append(morph_to_feature(word, is_L=True))
+            morphs.append((word.morph0, word.tag0))
+            if word.tag1 is not None:
+                features.append(morph_to_feature(word, is_L=False))
+                morphs.append((word.morph1, word.tag1))
+        return morphs, features
+
 
 class Feature(namedtuple('Feature', 'ls rs lo ro w t n n_ w_')):
     """
