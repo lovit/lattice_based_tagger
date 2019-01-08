@@ -4,6 +4,8 @@ Seoung-Hoon Na, Chang-Hyun Kim, and Young-Kil Kim (2014)
 """
 
 from collections import namedtuple
+from .feature import AbstractFeatureTransformer
+from lattice_tagger.utils import text_to_words
 
 class Feature(namedtuple('Feature', 'ls rs lo ro w t n n_ w_')):
     """
@@ -19,6 +21,7 @@ class Feature(namedtuple('Feature', 'ls rs lo ro w t n n_ w_')):
         return self.__repr__()
     def __repr__(self):
         return '(%s)' % ', '.join(['{}={}'.format(k,v) for k,v in self._asdict().items()])
+
 
 def morph_to_feature(word, is_L=True):
     """
@@ -78,3 +81,122 @@ def R_to_feature(word):
     n_ = n + len(word.morph0)
     w_ = word.morph1
     return Feature(ls, rs, lo, ro, w, t, n, n_, w_)
+
+def first_order_feature(fi, fj):
+    """
+    ls : Is there white space before morpheme
+    rs : Is there white space after morpheme
+    lo : Is the first syllable of morpheme derived from syllable mapping
+    ro : Is the last syllable of morpheme derived from syllable mapping
+    w : Surfacial form of morpheme
+    t : Tag of morpheme
+    n : Length of the surface form of morpheme
+    n_ : Extended length of the surface form of morpheme using lo and ro (compound feature)
+    w_ : Extended surface form of morpheme using lo and ro
+
+    0 - 3   : (tj, n_j), (tj, n_i, n_j), (ti, tj, n_i, n_j), (ti, tj, roi),
+    4 - 8   : (tj, roi), (tj, roj), (tj, lsj), (tj, lsj, loj), (tj, rsj, roj),
+    9 - 14  : (tj, wj), (tj, w_j), (wi, wj), (w_i, wj), (ti, tj, wj), (ti, tj, w_j),
+    15 - 18 : (tj, w_i, w_j), (ti, wi, wj), (ti, w_i, w_j), (ti, tj, wi),
+    19 - 21 : (ti, tj, w_i), (ti, tj, wi, wj), (ti, tj, w_i, w_j)
+
+    Usage
+    -----
+        >>> sent = '너무너무너무/Noun 는/Josa 아이오아이/Noun 의/Josa 노래/Noun 이/Adjective+ㅂ니다/Eomi'
+        >>> features = text_to_features(sent)
+        >>> first_order_feature(features[0], features[1])
+
+        $ [(0, 'Josa', 1),
+           (1, 'Josa', 6, 1),
+           (2, 'Noun', 'Josa', 6, 1),
+           (3, 'Noun', 'Josa', False),
+           (4, 'Josa', False),
+           (5, 'Josa', False),
+           (6, 'Josa', True),
+           (7, 'Josa', True, False),
+           (8, 'Josa', False, False),
+           (9, 'Josa', '는'),
+           (10, 'Josa', '는'),
+           (11, '너무너무너무', '는'),
+           (12, '너무너무너무', '는'),
+           (13, 'Noun', 'Josa', '는'),
+           (14, 'Noun', 'Josa', '는'),
+           (15, 'Josa', '너무너무너무', '는'),
+           (16, 'Noun', '너무너무너무', '는'),
+           (17, 'Noun', '너무너무너무', '는'),
+           (18, 'Noun', 'Josa', '너무너무너무'),
+           (19, 'Noun', 'Josa', '너무너무너무'),
+           (20, 'Noun', 'Josa', '너무너무너무', '는'),
+           (21, 'Noun', 'Josa', '너무너무너무', '는')]
+    """
+
+    features = [
+        (0, fj.t, fj.n_),
+        (1, fj.t, fi.n_, fj.n_),
+        (2, fi.t, fj.t, fi.n_, fj.n_),
+        (3, fi.t, fj.t, fi.ro),
+        (4, fj.t, fi.ro),
+        (5, fj.t, fj.ro),
+        (6, fj.t, fj.ls),
+        (7, fj.t, fj.ls, fj.lo),
+        (8, fj.t, fj.rs, fj.ro),
+        (9, fj.t, fj.w),
+        (10, fj.t, fj.w_),
+        (11, fi.w, fj.w),
+        (12, fi.w_, fj.w),
+        (13, fi.t, fj.t, fj.w),
+        (14, fi.t, fj.t, fj.w_),
+        (15, fj.t, fi.w_, fj.w_),
+        (16, fi.t, fi.w, fj.w),
+        (17, fi.t, fi.w_, fj.w_),
+        (18, fi.t, fj.t, fi.w),
+        (19, fi.t, fj.t, fi.w_),
+        (20, fi.t, fj.t, fi.w, fj.w),
+        (21, fi.t, fj.t, fi.w_, fj.w_)
+    ]
+    return features
+
+def second_order_feature(fi, fj, fk):
+    """
+    ls : Is there white space before morpheme
+    rs : Is there white space after morpheme
+    lo : Is the first syllable of morpheme derived from syllable mapping
+    ro : Is the last syllable of morpheme derived from syllable mapping
+    w : Surfacial form of morpheme
+    t : Tag of morpheme
+    n : Length of the surface form of morpheme
+    n_ : Extended length of the surface form of morpheme using lo and ro (compound feature)
+    w_ : Extended surface form of morpheme using lo and ro
+
+    22 - 26 : (ti, tk, wj), (tk, wi, wj), (ti, tj, wk), (ti, tj, tk, wk), (ti, tj, tk, wj, wk)
+    27 - 30 : (ti, tj, tk, wi, wj, wk), (ti, tj, tk, wj), (ti, tj, tk, wi), (ti, tj, tk, wi, wk)
+
+    Usage
+    -----
+        >>> sent = '너무너무너무/Noun 는/Josa 아이오아이/Noun 의/Josa 노래/Noun 이/Adjective+ㅂ니다/Eomi'
+        >>> features = text_to_features(sent)
+        >>> second_order_feature(features[0], features[1], features[2])
+
+        $ [(22, 'Noun', 'Noun', '는'),
+           (23, 'Noun', '너무너무너무', '는'),
+           (24, 'Noun', 'Josa', '아이오아이'),
+           (25, 'Noun', 'Josa', 'Noun', '아이오아이'),
+           (26, 'Noun', 'Josa', 'Noun', '는', '아이오아이'),
+           (27, 'Noun', 'Josa', 'Noun', '너무너무너무', '는', '아이오아이'),
+           (28, 'Noun', 'Josa', 'Noun', '는'),
+           (29, 'Noun', 'Josa', 'Noun', '너무너무너무'),
+           (30, 'Noun', 'Josa', 'Noun', '너무너무너무', '아이오아이')]
+    """
+
+    features = [
+        (22, fi.t, fk.t, fj.w),
+        (23, fk.t, fi.w, fj.w),
+        (24, fi.t, fj.t, fk.w),
+        (25, fi.t, fj.t, fk.t, fk.w),
+        (26, fi.t, fj.t, fk.t, fj.w, fk.w),
+        (27, fi.t, fj.t, fk.t, fi.w, fj.w, fk.w),
+        (28, fi.t, fj.t, fk.t, fj.w),
+        (29, fi.t, fj.t, fk.t, fi.w),
+        (30, fi.t, fj.t, fk.t, fi.w, fk.w)
+    ]
+    return features
