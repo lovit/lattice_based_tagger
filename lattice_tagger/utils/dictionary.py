@@ -24,15 +24,17 @@ def text_to_words(text):
         >>> text = '너무너무너무/Noun 는/Josa 아이오아이/Noun 의/Josa 노래/Noun 이/Adjective+ㅂ니다/Eomi'
         >>> text_to_words(sent)
 
-        $ [Word(너무너무너무, 너무너무너무/Noun, len=6),
+        $ [Word(BOS, BOS/BOS, len=0),
+           Word(너무너무너무, 너무너무너무/Noun, len=6),
            Word(는, 는/Josa, len=1),
            Word(아이오아이, 아이오아이/Noun, len=5),
            Word(의, 의/Josa, len=1),
            Word(노래, 노래/Noun, len=2),
-           Word(이+ㅂ니다, 이/Adjective + ㅂ니다/Eomi, len=4)]
+           Word(이+ㅂ니다, 이/Adjective + ㅂ니다/Eomi, len=4),
+           Word(EOS, EOS/EOS, len=0)]
     """
 
-    words = []
+    words = [Word(BOS, BOS, None, BOS, None, 0)]
     for word in text.split():
         morphtags = str_to_morphtag(word)
         morph0, tag0 = morphtags[0]
@@ -44,6 +46,7 @@ def text_to_words(text):
         else:
             raise ValueError('Word (%s) consists of three or more morphemes' % word)
         words.append(word)
+    words.append(Word(EOS, EOS, None, EOS, None, 0))
     return words
 
 class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 len')):
