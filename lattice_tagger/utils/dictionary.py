@@ -83,57 +83,63 @@ class WordDictionary:
     """
     Usage
     -----
-        >>> tag_to_words = {
+        >>> tag_to_morphs = {
         >>>     Noun: {'아이', '이', '노래', '너무너무너무', '아이오아이', '공연', '춤', '연습'},
         >>>     Josa: {'는', '의', '을', '이'},
         >>>     Verb: {'춥니다'},
         >>>     Adjective: {'있습니다', '입니다'},
         >>> }
         
-        >>> dictionary = WordDictionary(tag_to_words)
+        >>> dictionary = WordDictionary(tag_to_morphs)
         >>> dictionary.check('아이', 'Noun')
-
         $ True
 
         >>> dictionary.get_tags('아이')
-
         $ ['Noun']
+
+        >>> dictionary.lookup('아이오아이')
+        $ [Word(아이오아이, 아이오아이/Noun, len=5, b=0, e=5)]
+
+        >>> dictionary.lookup('아이오아이', 5)
+        $ [Word(아이오아이, 아이오아이/Noun, len=5, b=5, e=10)]
     """
 
-    def __init__(self, tag_to_morph):
-        self.tag_to_morph = tag_to_morph
+    def __init__(self, tag_to_morphs):
+        self.tag_to_morphs = tag_to_morphs
 
-    def as_Word(self, word):
+    def lookup(self, morph, b=0):
+        n = len(morph)
+        e = b + n
         words = [
-            Word(word, word, None, tag, None, len(word))
-            for tag in self.get_tags(word)]
+            Word(morph, morph, None, tag, None, n, b, e)
+            for tag in self.get_tags(morph)]
         return words
 
-    def check(self, word, tag):
-        return word in self.tag_to_morph.get(tag, {})
+    def check(self, morph, tag):
+        return morph in self.tag_to_morphs.get(tag, {})
 
-    def get_tags(self, word):
-        return [tag for tag, words in self.tag_to_morph.items() if word in words]
+    def get_tags(self, morph):
+        return [tag for tag, morphs in self.tag_to_morphs.items() if morph in morphs]
 
-    def add(self, words, tag, force=False):
-        if isinstance(words, str):
-            words = {words}
-        if (not force) and not (tag in self.tag_to_morph):
+    def add(self, morphs, tag, force=False):
+        if isinstance(morphs, str):
+            morphs = {morphs}
+        if (not force) and not (tag in self.tag_to_morphs):
             raise ValueError('{} tag does not exist in dictionary'.format(tag))
-        if not (tag in self.tag_to_morph):
-            self.tag_to_morph[tag] = set(words)
-        self.tag_to_morph[tag].update(words)
+        if not (tag in self.tag_to_morphs):
+            self.tag_to_morphs[tag] = set(morphs)
+        self.tag_to_morphs[tag].update(morphs)
 
-    def remove_words(self, words, tag):
-        if isinstance(words, str):
-            words = {words}
-        if not isinstance(words, set):
-            words = set(words)
-        if not (tag in self.tag_to_morph):
+    def remove_words(self, morphs, tag):
+        if isinstance(morphs, str):
+            morphs = {morphs}
+        if not isinstance(morphs, set):
+            morphs = set(morphs)
+        if not (tag in self.tag_to_morphs):
             raise ValueError('{} tag does not exist in dictioanry')
-        before = self.tag_to_morph[tag]
-        before = {word for word in before if not (word in words)}
-        self.tag_to_morph[tag] = before
+        before = self.tag_to_morphs[tag]
+        before = {morph for morph in before if not (morph in morphs)}
+        self.tag_to_morphs[tag] = before
 
 
 class MorphemeDictionary(WordDictionary):
