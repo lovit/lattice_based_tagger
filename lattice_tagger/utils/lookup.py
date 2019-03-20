@@ -37,70 +37,54 @@ def sentence_lookup(sent, eojeol_lookup):
         offset += len(eojeol)
     return nodes
 
-class LRLookup:
-    """
-    Assume that eojeol has no space noise
 
-    Usage
-    -----
-        >>> morph_dict = MorphemeDictionary(tag_to_morphs)
-        >>> morph_dict.as_Word('했다')
-
-        $ [Word(했다, 하/Verb + 았다/Eomi, len=2)]
-
-        >>> morph_dict.as_Word('공연')
-
-        $ [Word(공연, 공연/Noun, len=2)]
-
-        >>> eojeol_lookup = LRLookup(morph_dict)
-        >>> eojeol_lookup('공연했다')
-
-        $ [(Word(공연, 공연/Noun, len=2), 0, 2), (Word(했다, 하/Verb + 았다/Eomi, len=2), 2, 4)]
-
-        >>> eojeol_lookup('공연했다', offset=3)
-
-        $ [(Word(공연, 공연/Noun, len=2), 3, 5), (Word(했다, 하/Verb + 았다/Eomi, len=2), 5, 7)]
-
-    """
-
-    def __init__(self, dictionary, templates=None):
-        self.dictionary = dictionary
-        if templates is None:
-            templates = self._default_templates()
-        self.templates = templates
-
-    def _default_templates(self):
-        templates = [
-            (Noun, Josa),
-            (Noun, Adjective),
-            (Noun, Verb),
-        ]
-        return templates
-
+class Lookup:
     def __call__(self, eojeol, offset=0):
         return self.lookup(eojeol, offset)
 
+    def lookup(self, eojeol, offset):
+        raise NotImplemented
+
+class LRLookup(Lookup):
+    def __init__(self, dictionary, prefer_exact_match=True):
+        self.dictionary = dictionary
+        self.prefer_exact_match = prefer_exact_match
+
     def lookup(self, eojeol, offset=0):
-        def accept(l_, r_, template):
-            return l_.tag0 == template[0] and r_.tag0 == template[1]
+        return lr_lookup(eojeol, self.dictionary, offset, self.prefer_exact_match)
 
-        words = self.dictionary.as_Word(eojeol)
 
-        if words:
-            return [(word, offset, offset + word.len) for word in words]
+def lr_lookup(eojeol, dictionary, offset=0, prefer_exact_match=True):
+    """
+    >>> from lattice_tagger.utils import DemoMorphemeDictionary
+    >>> dictionary = DemoMorphemeDictionary()
 
-        n = len(eojeol)
-        for i in range(1, n):
-            l = self.dictionary.as_Word(eojeol[:i])
-            r = self.dictionary.as_Word(eojeol[i:])
-            for l_ in l:
-                for r_ in r:
-                    for template in self.templates:
-                        if not accept(l_, r_, template):
-                            continue
-                        words.append((l_, offset, offset + l_.len))
-                        words.append((r_, offset + l_.len, offset + l_.len + r_.len))
+    >>> lr_lookup('아이오아이', dictionary)
+    $ [Word(아이오아이, 아이오아이/Noun, len=5, b=0, e=5)]
+
+    >>> lr_lookup('아이오아이', dictionary, offset=2)
+    $ [Word(아이오아이, 아이오아이/Noun, len=5, b=2, e=7)]
+
+    >>> lr_lookup('아이오아이', dictionary, prefer_exact_match=False)
+    $ [Word(아이오아이, 아이오아이/Noun, len=5, b=0, e=5),
+       Word(아이오, 아이오/Noun, len=3, b=0, e=3),
+       Word(아이, 아이/Noun, len=2, b=3, e=5)]
+    """
+
+    words = dictionary.lookup(eojeol, offset)
+    if prefer_exact_match and words:
         return words
+
+    n = len(eojeol)
+    e = offset + n
+    for i in range(1, n):
+        lset = dictionary.lookup(eojeol[:i], offset)
+        rset = dictionary.lookup(eojeol[i:], offset + i)
+        if not lset or not rset:
+            continue
+        words += lset
+        words += rset
+    return words
 
 
 class SubwordLookup:
