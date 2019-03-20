@@ -10,3 +10,6 @@ from .tagset import Eomi
 from .tagset import Adverb
 from .tagset import Determiner
 from .tagset import Exclamation
+from .tagset import BOS
+from .tagset import EOS
+from .tagset import Unk
