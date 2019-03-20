@@ -17,18 +17,33 @@ def sentence_lookup(sent, eojeol_lookup):
 
     Usage
     ----
-        >>> dictionary = MorphemeDictionary(tag_to_morphs)
+        >>> dictionary = DemoMorphemeDictionary()
         >>> eojeol_lookup = LRLookup(dictionary)
 
         >>> sent = '너무너무너무는 아이오아이의 노래입니다'
         >>> sentence_lookup(sent, eojeol_lookup)
 
-        $ [(Word(너무너무너무, 너무너무너무/Noun, len=6), 0, 6),
-           (Word(는, 는/Josa, len=1), 6, 7),
-           (Word(아이오아이, 아이오아이/Noun, len=5), 7, 12),
-           (Word(의, 의/Josa, len=1), 12, 13),
-           (Word(노래, 노래/Noun, len=2), 13, 15),
-           (Word(입니다, 이/Adjective + ㅂ니다/Eomi, len=3), 15, 18)]
+        $ [Word(너무너무너무는, 너무너무너무/Noun + 는/Josa, len=7, b=0, e=7),
+           Word(아이오아이의, 아이오아이/Noun + 의/Josa, len=6, b=7, e=13),
+           Word(노래, 노래/Noun, len=2, b=13, e=15),
+           Word(입니다, 이/Adjective + ㅂ니다/Eomi, len=3, b=15, e=18)]
+
+        >>> eojeol_lookup = WordLookup(dictionary)
+        >>> sentence_lookup(sent, eojeol_lookup)
+
+        $ [Word(너무너무너무, 너무너무너무/Noun, len=6, b=0, e=6),
+           Word(너무너무너무는, 너무너무너무/Noun + 는/Josa, len=7, b=0, e=7),
+           Word(아이, 아이/Noun, len=2, b=7, e=9),
+           Word(아이오, 아이오/Noun, len=3, b=7, e=10),
+           Word(아이오아이, 아이오아이/Noun, len=5, b=7, e=12),
+           Word(아이오아이의, 아이오아이/Noun + 의/Josa, len=6, b=7, e=13),
+           Word(이, 이/Noun, len=1, b=8, e=9),
+           Word(아이, 아이/Noun, len=2, b=10, e=12),
+           Word(아이의, 아이/Noun + 의/Josa, len=3, b=10, e=13),
+           Word(이, 이/Noun, len=1, b=11, e=12),
+           Word(이의, 이/Noun + 의/Josa, len=2, b=11, e=13),
+           Word(노래, 노래/Noun, len=2, b=13, e=15),
+           Word(입니다, 이/Adjective + ㅂ니다/Eomi, len=4, b=15, e=18)]
     """
 
     offset = 0
@@ -144,6 +159,9 @@ def lr_lookup(eojeol, dictionary, offset=0, prefer_exact_match=True):
     $ [Word(아이오아이, 아이오아이/Noun, len=5, b=0, e=5),
        Word(아이오, 아이오/Noun, len=3, b=0, e=3),
        Word(아이, 아이/Noun, len=2, b=3, e=5)]
+
+    >>> lr_lookup('아이오아이의', dictionary)
+    $ [Word(아이오아이의, 아이오아이/Noun + 의/Josa, len=6, b=0, e=6)]
     """
 
     words = dictionary.lookup(eojeol, offset)
@@ -153,6 +171,11 @@ def lr_lookup(eojeol, dictionary, offset=0, prefer_exact_match=True):
     n = len(eojeol)
     e = offset + n
     for i in range(1, n):
+        # special case : Noun + Josa
+        l, r = eojeol[:i], eojeol[i:]
+        if dictionary.check(l, Noun) and dictionary.check(r, Josa):
+            words.append(Word(eojeol, l, r, Noun, Josa, n, offset, e))
+            continue
         lset = dictionary.lookup(eojeol[:i], offset)
         rset = dictionary.lookup(eojeol[i:], offset + i)
         if not lset or not rset:
