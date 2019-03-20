@@ -10,3 +10,5 @@ Exclamation = 'Exclamation'
 
 BOS = 'BOS'
 EOS = 'EOS'
+
+Unk = 'Unknown'
