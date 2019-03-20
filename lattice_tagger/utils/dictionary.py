@@ -49,35 +49,34 @@ def text_to_words(text):
     words.append(Word(EOS, EOS, None, EOS, None, 0))
     return words
 
-class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 len')):
+class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 len b e')):
     """
     Usage
     -----
         >>> word = Word('아이오아이', '아이오아이', None, 'Noun', None, 5)
         >>> print(word)
 
-        $ Word(아이오아이, 아이오아이/Noun, len=5)
+        $ Word(아이오아이, 아이오아이/Noun, len=5, b=0, e=5)
 
-        >>> word = Word('가고있는', '가고있', '는', 'Verb', 'Eomi', 4)
+        >>> word = Word('가고있는', '가고있', '는', 'Verb', 'Eomi', 4, 2, 6)
         >>> print(word)
 
-        $ Word(가고있는, 가고있/Verb + 는/Eomi, len=4)
+        $ Word(가고있는, 가고있/Verb + 는/Eomi, len=4, b=2, e=6)
 
-        >>> word = Word('간', '가', 'ㄴ', 'Verb', 'Eomi', 1)
+        >>> word = Word('간', '가', 'ㄴ', 'Verb', 'Eomi', 1, 3, 4)
         >>> print(word)
 
-        $ Word(간, 가/Verb + ㄴ/Eomi, len=1)
-
+        $ Word(간, 가/Verb + ㄴ/Eomi, len=1, b=3, e=4)
     """
 
     def __repr__(self):
         return self.__str__()
     def __str__(self):
         if self.morph1:
-            args = (self.word, self.morph0, self.tag0, self.morph1, self.tag1, self.len)
-            return 'Word(%s, %s/%s + %s/%s, len=%d)' % args
-        args = (self.word, self.morph0, self.tag0, self.len)
-        return 'Word(%s, %s/%s, len=%d)' % args
+            args = (self.word, self.morph0, self.tag0, self.morph1, self.tag1, self.len, self.b, self.e)
+            return 'Word(%s, %s/%s + %s/%s, len=%d, b=%d, e=%d)' % args
+        args = (self.word, self.morph0, self.tag0, self.len, self.b, self.e)
+        return 'Word(%s, %s/%s, len=%d, b=%d, e=%d)' % args
 
 
 class WordDictionary:
