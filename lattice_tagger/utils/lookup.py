@@ -274,22 +274,28 @@ def sentence_lookup_as_graph(sent, eojeol_lookup):
 
     Usage
     -----
-        >>> nodes, edges = lookup_as_edge('공연을했다', eojeol_lookup)
+        >>> eojeol_lookup = WordLookup(dictionary)
+        >>> nodes, edges = sentence_lookup_as_graph('공연을했다', eojeol_lookup)
+
         >>> print(nodes)
 
         $ ['BOS',
            'EOS',
-           Node(공연, 공연/Noun, 0, 2, len=2),
-           Node(을, 을/Josa, 2, 3, len=1),
-           Node(했다, 하/Verb + 았다/Eomi, 3, 5, len=2)]
+           Word(공연, 공연/Noun, len=2, b=0, e=2),
+           Word(공연을, 공연/Noun + 을/Josa, len=3, b=0, e=3),
+           Word(했다, 하/Verb + 았다/Eomi, len=3, b=3, e=5)]
 
-        >>> print(edges)
 
-        $ [['BOS', Node(공연, 공연/Noun, 0, 2, len=2), 0],
-           [Node(공연, 공연/Noun, 0, 2, len=2), Node(을, 을/Josa, 2, 3, len=1), 0],
-           [Node(을, 을/Josa, 2, 3, len=1), Node(했다, 하/Verb + 았다/Eomi, 3, 5, len=2), 0],
-           [Node(했다, 하/Verb + 았다/Eomi, 3, 5, len=2), 'EOS', 0]]
+        >>> for from_, to_, weight in edges:
+        >>>     print('{} -> {} : {}'.format(from_, to_, weight))
+
+        $ BOS -> Word(공연, 공연/Noun, len=2, b=0, e=2) : 0
+          BOS -> Word(공연을, 공연/Noun + 을/Josa, len=3, b=0, e=3) : 0
+          Word(공연, 공연/Noun, len=2, b=0, e=2) -> Word(했다, 하/Verb + 았다/Eomi, len=3, b=3, e=5) : 0
+          Word(공연을, 공연/Noun + 을/Josa, len=3, b=0, e=3) -> Word(했다, 하/Verb + 았다/Eomi, len=3, b=3, e=5) : 0
+          Word(했다, 하/Verb + 았다/Eomi, len=3, b=3, e=5) -> EOS : 0
     """
+
     def closest(begin, last, bindex):
         for i in range(begin, last):
             if bindex[i]:
@@ -304,19 +310,19 @@ def sentence_lookup_as_graph(sent, eojeol_lookup):
         return [], []
 
     bindex = [[] for _ in range(n)]
-    nodes = [BOS, EOS]
-    for word, b, e in words:
-        node = word_posi_to_node(word, b, e)
-        bindex[b].append(node)
-        nodes.append(node)
+    for word in words:
+        bindex[word.b].append(word)
 
     edges = [[BOS, word, 0] for word in bindex[closest(0, n, bindex)]]
-    for nodes_b in bindex:
-        for node in nodes_b:
-            adj_b = closest(node.e, n, bindex)
+    for words_in_b in bindex:
+        for from_word in words_in_b:
+            adj_b = closest(from_word.e, n, bindex)
             if adj_b == -1:
-                edges.append([node, EOS, 0])
+                edges.append([from_word, EOS, 0])
             else:
-                for adj in bindex[adj_b]:
-                    edges.append([node, adj, 0])
+                for to_word in bindex[adj_b]:
+                    edges.append([from_word, to_word, 0])
+
+    nodes = [BOS, EOS] + words
+
     return nodes, edges

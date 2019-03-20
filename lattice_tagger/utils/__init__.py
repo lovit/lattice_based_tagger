@@ -7,6 +7,7 @@ from .dictionary import MorphemeDictionary
 from .dictionary import str_to_morphtag
 from .dictionary import text_to_words
 from .lookup import sentence_lookup
+from .lookup import sentence_lookup_as_graph
 from .lookup import LRLookup
 from .lookup import SubwordLookup
 from .lookup import WordLookup
