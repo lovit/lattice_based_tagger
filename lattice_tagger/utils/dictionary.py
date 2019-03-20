@@ -153,27 +153,38 @@ class MorphemeDictionary(WordDictionary):
         >>>     Adjective: {'있', '이'},
         >>>     Eomi: {'ㅂ니다', '습니다', '았습니다', '다', 'ㅆ다'}
         >>> }
+        >>> surface_to_lemma = {
+        >>>     '했': (('하', '았'),),
+        >>>     '있': (('이', 'ㅆ'),),
+        >>>     '입': (('이', 'ㅂ'),)
+        >>> }
 
-        >>> dictionary = MorphemeDictionary(tag_to_words)
+        >>> dictionary = MorphemeDictionary(tag_to_morphs, surface_to_lemma)
         >>> dictionary.lemmatize('있다')
-
         $ [(('있', 'Adjective'), ('다', 'Eomi')), (('이', 'Adjective'), ('ㅆ다', 'Eomi'))]
 
+        >>> dictionary.lookup('있다', b=3)
+        $ [Word(있다, 있/Adjective + 다/Eomi, len=2, b=3, e=5),
+        $  Word(있다, 이/Adjective + ㅆ다/Eomi, len=2, b=3, e=5)]
+
+        >>> dictionary.lookup('아이오아이', 5)
+        $ [Word(아이오아이, 아이오아이/Noun, len=5, b=5, e=10)]
     """
 
-    def __init__(self, tag_to_morph, surface_to_canon=None):
+    def __init__(self, tag_to_morph, surface_to_lemma=None):
         super().__init__(tag_to_morph)
-        if surface_to_canon is None:
-            surface_to_canon = {}
-        self.surface_to_canon = surface_to_canon
+        if surface_to_lemma is None:
+            surface_to_lemma = {}
+        self.surface_to_lemma = surface_to_lemma
 
-    def as_Word(self, word):
-        length = len(word)
+    def lookup(self, word, b=0):
+        n = len(word)
+        e = b + n
         words = [
-            Word(word, word, None, tag, None, length)
+            Word(word, word, None, tag, None, n, b, e)
             for tag in self.get_tags(word)]
         for (m0, t0), (m1, t1) in self.lemmatize(word):
-            words.append(Word(word, m0, m1, t0, t1, length))
+            words.append(Word(word, m0, m1, t0, t1, n, b, e))
         return words
 
     def lemmatize(self, word):
@@ -188,12 +199,12 @@ class MorphemeDictionary(WordDictionary):
             yield (l, Verb), (r, Eomi)
         if self.check(l, Adjective) and self.check(r, Eomi):
             yield (l, Adjective), (r, Eomi)
-        if not l[-1] in self.surface_to_canon:
+        if not l[-1] in self.surface_to_lemma:
             return None
         l_pre = l[:-1]
-        for l_suf, r_pre in self.surface_to_canon[l[-1]]:
-            stem = l_pre + l_suf
-            eomi = r_pre + r
+        for l_lemma, r_lemma in self.surface_to_lemma[l[-1]]:
+            stem = l_pre + l_lemma
+            eomi = r_lemma + r
             if self.check(eomi, Eomi):
                 if self.check(stem, Verb):
                     yield (stem, Verb), (eomi, Eomi)
