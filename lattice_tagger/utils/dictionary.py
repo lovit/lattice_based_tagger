@@ -24,29 +24,37 @@ def text_to_words(text):
         >>> text = '너무너무너무/Noun 는/Josa 아이오아이/Noun 의/Josa 노래/Noun 이/Adjective+ㅂ니다/Eomi'
         >>> text_to_words(sent)
 
-        $ [Word(BOS, BOS/BOS, len=0),
-           Word(너무너무너무, 너무너무너무/Noun, len=6),
-           Word(는, 는/Josa, len=1),
-           Word(아이오아이, 아이오아이/Noun, len=5),
-           Word(의, 의/Josa, len=1),
-           Word(노래, 노래/Noun, len=2),
-           Word(이+ㅂ니다, 이/Adjective + ㅂ니다/Eomi, len=4),
-           Word(EOS, EOS/EOS, len=0)]
+        $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),
+           Word(너무너무너무, 너무너무너무/Noun, len=6, b=0, e=6),
+           Word(는, 는/Josa, len=1, b=6, e=7),
+           Word(아이오아이, 아이오아이/Noun, len=5, b=7, e=12),
+           Word(의, 의/Josa, len=1, b=12, e=13),
+           Word(노래, 노래/Noun, len=2, b=13, e=15),
+           Word(이+ㅂ니다, 이/Adjective + ㅂ니다/Eomi, len=4, b=15, e=18),
+           Word(EOS, EOS/EOS, len=0, b=18, e=18)]
     """
 
-    words = [Word(BOS, BOS, None, BOS, None, 0)]
+    b = 0
+    words = [Word(BOS, BOS, None, BOS, None, 0, 0, 0)]
     for word in text.split():
         morphtags = str_to_morphtag(word)
         morph0, tag0 = morphtags[0]
+        n = len(morph0)
         if len(morphtags) == 1:
-            word = Word(morph0, morph0, None, tag0, None, len(morph0))
+            e = b + n
+            word = Word(morph0, morph0, None, tag0, None, n, b, e)
         elif len(morphtags) == 2:
             morph1, tag1 = morphtags[1]
-            word = Word('%s+%s' % (morph0, morph1), morph0, morph1, tag0, tag1, len(morph0) + len(morph1))
+            n += len(morph1)
+            if 'ㄱ' <= morph1[0] <= 'ㅎ':
+                n -= 1
+            e = b + n
+            word = Word('%s+%s' % (morph0, morph1), morph0, morph1, tag0, tag1, len(morph0) + len(morph1), b, e)
         else:
             raise ValueError('Word (%s) consists of three or more morphemes' % word)
+        b += n
         words.append(word)
-    words.append(Word(EOS, EOS, None, EOS, None, 0))
+    words.append(Word(EOS, EOS, None, EOS, None, 0, b, b))
     return words
 
 class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 len b e')):
