@@ -1,4 +1,5 @@
 from collections import namedtuple
+from lattice_tagger.utils import Word
 from lattice_tagger.tagset import *
 
 
@@ -60,6 +61,37 @@ class SubwordLookup(EojeolLookup):
 
     def lookup(self, eojeol, offset=0):
         return subword_lookup(eojeol, self.dictionary, offset, self.prefer_exact_match)
+
+class WordLookup(EojeolLookup):
+    def __init__(self, dictionary, prefer_exact_match=True, standalones=None, max_len=-1):
+        if not hasattr(dictionary, 'surface_to_lemma'):
+            raise ValueError('dictionary must be MorphemeDictionary')
+
+        if standalones is None:
+            standalones = [Noun, Adverb, Exclamation, Determiner]
+
+        self.dictionary = dictionary
+        self.prefer_exact_match = prefer_exact_match
+        self.standalones = standalones
+        if max_len <= 0:
+            self.max_len = self._find_max_len(dictionary, standalones)
+        else:
+            self.max_len = max_len
+
+    def lookup(self, eojeol, offset=0):
+        return word_lookup(eojeol, self.dictionary, offset,
+            self.prefer_exact_match, self.standalones, self.max_len)
+
+    def _find_max_len(self, dictionary, standalones):
+        standalones_ = set(standalones)
+        standalones_.add(Verb)
+        standalones_.add(Adjective)
+        max_len = 0
+        for tag, morphs in dictionary.tag_to_morphs.items():
+            if not tag in standalones_:
+                continue
+            max_len = max(max_len, max(len(morph) for morph in morphs))
+        return max_len
 
 def subword_lookup(eojeol, dictionary, offset=0, prefer_exact_match=True):
     """
@@ -127,6 +159,81 @@ def lr_lookup(eojeol, dictionary, offset=0, prefer_exact_match=True):
             continue
         words += lset
         words += rset
+    return words
+
+def word_lookup(eojeol, dictionary, offset=0, prefer_exact_match=True, standalones=None, max_len=-1):
+    """
+    >>> word_lookup('아이오아이', dictionary)
+    $ [Word(아이오아이, 아이오아이/Noun, len=5, b=0, e=5)]
+
+    >>> word_lookup('노래를', dictionary)
+    $ [Word(노래, 노래/Noun, len=2, b=0, e=2),
+      Word(노래를, 노래/Noun + 를/Josa, len=3, b=0, e=3)]
+
+    >>> word_lookup('우와!노래를했다', dictionary)
+    $ [Word(우와, 우와/Exclamation, len=2, b=0, e=2),
+       Word(노래, 노래/Noun, len=2, b=3, e=5),
+       Word(노래를, 노래/Noun + 를/Josa, len=3, b=3, e=6),
+       Word(했다, 하/Verb + 았다/Eomi, len=3, b=6, e=8)]
+    """
+
+    # Initialize
+    n = len(eojeol)
+
+    if standalones is None:
+        # Noun + Josa, Adjective / Verb + Eomi
+        standalones = [Noun, Adverb, Exclamation, Determiner]
+
+    if max_len <= 0:
+        max_len = n
+
+    # eojeol exact match
+    words = dictionary.lookup(eojeol, offset)
+    if prefer_exact_match and words:
+        return words
+
+    # prepare conjugation points
+    lemmatizing = [dictionary.surface_to_lemma.get(c, []) for c in eojeol]
+
+    # check loop
+    for b in range(n):
+        for le in range(b+1, min(b+max_len, n)+1):
+            l = eojeol[b:le]
+
+            # check conjugation points
+            if not lemmatizing[le-1]:
+                l_ = None
+            else:
+                l_ = [(l[:-1] + l1, r0) for l1, r0 in lemmatizing[le-1]]
+
+            # check standalone tags
+            for ltag in standalones:
+                if dictionary.check(l, ltag):
+                    words.append(Word(l, l, None, ltag, None, le-b, offset + b, offset + le))
+
+            # check L + R structure
+            for re in range(le, n+1):
+                r = eojeol[le:re]
+
+                # when exists no conjugation
+                if dictionary.check(l, Noun) and dictionary.check(r, Josa):
+                    words.append(Word(l+r, l, r, Noun, Josa, re-b, offset + b, offset + re))
+                if dictionary.check(l, Verb) and dictionary.check(r, Eomi):
+                    words.append(Word(l+r, l, r, Verb, Eomi, re-b, offset + b, offset + re))
+                if dictionary.check(l, Adjective) and dictionary.check(r, Eomi):
+                    words.append(Word(l+r, l, r, Adjective, Eomi, re-b, offset + b, offset + re))
+
+                if l_ is None:
+                    continue
+
+                # when exists conjugation
+                for l_lemma, r0 in l_:
+                    r_lemma = r0 + r
+                    if dictionary.check(l_lemma, Verb) and dictionary.check(r_lemma, Eomi):
+                        words.append(Word(l+r, l_lemma, r_lemma, Verb, Eomi, re-b+1, offset + b, offset + re))
+                    if dictionary.check(l_lemma, Adjective) and dictionary.check(r_lemma, Eomi):
+                        words.append(Word(l+r, l_lemma, r_lemma, Adjective, Eomi, re-b+1, offset + b, offset + re))
+
     return words
 
 def sentence_lookup_as_graph(sent, eojeol_lookup):
