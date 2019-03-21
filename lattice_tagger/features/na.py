@@ -8,8 +8,8 @@ from lattice_tagger.utils import text_to_words
 from .feature import AbstractFeatureTransformer
 
 
-class NaFeatureTransformer(AbstractFeatureTransformer):
-    def words_to_features(self, words):
+class NaFeatureTransformer(WordsEncoder):
+    def encode(self, words):
         morphs, morph_features = self._to_morph_features(words)
         features = []
         n = len(words)
