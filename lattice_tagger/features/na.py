@@ -5,7 +5,7 @@ Seoung-Hoon Na, Chang-Hyun Kim, and Young-Kil Kim (2014)
 
 from collections import namedtuple
 from lattice_tagger.utils import text_to_words
-from .feature import AbstractFeatureTransformer
+from .feature import WordsEncoder
 
 
 class NaFeatureTransformer(WordsEncoder):

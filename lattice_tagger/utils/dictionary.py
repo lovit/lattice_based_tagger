@@ -21,7 +21,7 @@ def text_to_words(text):
     """
     Usage
     -----
-        >>> text = '너무너무너무/Noun 는/Josa 아이오아이/Noun 의/Josa 노래/Noun 이/Adjective+ㅂ니다/Eomi'
+        >>> sent = '너무너무너무/Noun 는/Josa 아이오아이/Noun 의/Josa 노래/Noun 이/Adjective+ㅂ니다/Eomi'
         >>> text_to_words(sent)
 
         $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),

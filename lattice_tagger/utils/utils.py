@@ -29,3 +29,21 @@ def write_rules(rules, path):
             f.write('  "{}": [{}],\n'.format(key, ','.join(['"%s"' % v for v in values])))
         f.write('  "{}": [{}]\n'.format(rules[-1][0], ','.join(['"%s"' % v for v in rules[-1][1]])))
         f.write('}\n')
+
+def left_space_tag(sent):
+    """
+    >>> sent = '너무너무너무는 아이오아이의 노래입니다'
+    >>> chars, tags = left_space_tag(sent)
+    >>> chars = '너무너무너무는아이오아이의노래입니다'
+    >>> tags = [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]
+    """
+    chars = sent.replace(' ','')
+    tags = [1] + [0]*(len(chars) - 1)
+    idx = 0
+
+    for c in sent:
+        if c == ' ':
+            tags[idx] = 1
+        else:
+            idx += 1
+    return chars, tags

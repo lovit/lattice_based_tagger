@@ -14,3 +14,4 @@ from .lookup import WordLookup
 from .utils import installpath
 from .utils import load_rules
 from .utils import write_rules
+from .utils import left_space_tag
