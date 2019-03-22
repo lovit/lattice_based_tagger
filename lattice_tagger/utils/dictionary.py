@@ -17,12 +17,13 @@ def str_to_morphtag(word):
 
     return [morphtag.split('/',1) for morphtag in word.split('+')]
 
-def text_to_words(text):
+def text_to_words(sent, morph_text):
     """
     Usage
     -----
-        >>> sent = '너무너무너무/Noun 는/Josa 아이오아이/Noun 의/Josa 노래/Noun 이/Adjective+ㅂ니다/Eomi'
-        >>> text_to_words(sent)
+        >>> sent = '너무너무너무는 아이오아이의 노래 입니다'
+        >>> morph_text = '너무너무너무/Noun 는/Josa 아이오아이/Noun 의/Josa 노래/Noun 이/Adjective+ㅂ니다/Eomi'
+        >>> text_to_words(sent, morph_text)
 
         $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),
            Word(너무너무너무, 너무너무너무/Noun, len=6, b=0, e=6),
@@ -32,24 +33,38 @@ def text_to_words(text):
            Word(노래, 노래/Noun, len=2, b=13, e=15),
            Word(이+ㅂ니다, 이/Adjective + ㅂ니다/Eomi, len=4, b=15, e=18),
            Word(EOS, EOS/EOS, len=0, b=18, e=18)]
+
+
+        >>> sent = '빙수 고명으로 얹는 삶은 단팥과 찰떡 젤리 포장도 나와 있다'
+        >>> morph_text = '빙수/Noun 고명/Noun+으로/Josa 얹/Verb+는/Eomi 삶/Verb+은/Eomi 단팥/Noun+과/Josa 찰떡/Noun 젤리/Noun 포장/Noun+도/Josa 나오/Verb+아/Eomi 있/Verb+다/Eomi'
+        >>> text_to_words(sent, morph_text)
+
+        $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),
+           Word(빙수, 빙수/Noun, len=2, b=0, e=2),
+           Word(고명으로, 고명/Noun + 으로/Josa, len=4, b=2, e=6),
+           Word(얹는, 얹/Verb + 는/Eomi, len=2, b=6, e=8),
+           Word(삶은, 삶/Verb + 은/Eomi, len=2, b=8, e=10),
+           Word(단팥과, 단팥/Noun + 과/Josa, len=3, b=10, e=13),
+           Word(찰떡, 찰떡/Noun, len=2, b=13, e=15),
+           Word(젤리, 젤리/Noun, len=2, b=15, e=17),
+           Word(포장도, 포장/Noun + 도/Josa, len=3, b=17, e=20),
+           Word(나와, 나오/Verb + 아/Eomi, len=2, b=20, e=22),
+           Word(있다, 있/Verb + 다/Eomi, len=2, b=22, e=24),
+           Word(EOS, EOS/EOS, len=0, b=24, e=24)]
     """
 
     b = 0
     words = [Word(BOS, BOS, None, BOS, None, 0, 0, 0)]
-    for word in text.split():
-        morphtags = str_to_morphtag(word)
+    for eojeol, morphs in zip(sent.split(), morph_text.split()):
+        morphtags = str_to_morphtag(morphs)
         morph0, tag0 = morphtags[0]
-        n = len(morph0)
+        n = len(eojeol)
+        e = b + n
         if len(morphtags) == 1:
-            e = b + n
             word = Word(morph0, morph0, None, tag0, None, n, b, e)
         elif len(morphtags) == 2:
             morph1, tag1 = morphtags[1]
-            n += len(morph1)
-            if 'ㄱ' <= morph1[0] <= 'ㅎ':
-                n -= 1
-            e = b + n
-            word = Word('%s+%s' % (morph0, morph1), morph0, morph1, tag0, tag1, len(morph0) + len(morph1), b, e)
+            word = Word(eojeol, morph0, morph1, tag0, tag1, len(eojeol), b, e)
         else:
             raise ValueError('Word (%s) consists of three or more morphemes' % word)
         b += n
