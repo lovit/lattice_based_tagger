@@ -76,7 +76,11 @@ def trigram_encoder_(word_i, word_j, word_k, word_is_L=None):
 
     # unigram, word is L feature
     if word_is_L is not None:
-        features.append((5, word_k.morph0, word_k.tag0, word_is_L[word_k.b]))
+        if word_k.b == word_k.e:
+            is_l_tag = False
+        else:
+            is_l_tag = word_is_L[word_k.b]
+        features.append((5, word_k.morph0, word_k.tag0, is_l_tag))
 
     # trigram feature
     if word_i is not None:
