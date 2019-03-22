@@ -3,13 +3,13 @@ class WordsEncoder:
         self.feature_dic = feature_dic
         raise NotImplemented('Inherit WordsEncoder and implement encode function')
 
-    def __call__(self, words):
-        return self.encode(words)
+    def __call__(self, words, *args):
+        return self.encode(words, *args)
 
     def is_trained(self):
         return self.feature_dic is not None
 
-    def encode(self, words):
+    def encode(self, words, *args):
         raise NotImplemented('Inherit WordsEncoder and implement encode function')
 
     def _filter(self, feature_seq):
@@ -19,6 +19,17 @@ class WordsEncoder:
         return filtered_seq
 
 class SimpleTrigramEncoder(WordsEncoder):
+    """
+    >>> sent = '너무너무너무는 아이오아이의 노래입니다'
+    >>> text = '너무너무너무/Noun 는/Josa  아이오아이/Noun 의/Josa  노래/Noun 이/Adjective+ㅂ니다/Eomi'
+    >>> words = text_to_words(text)
+    >>> words_ = flatten_words(words)
+    >>> chars, is_l = left_space_tag(sent)
+
+    >>> encoder = SimpleTrigramEncoder()
+    >>> encoder(words_)
+    """
+
     def __init__(self, feature_dic=None):
         self.feature_dic = feature_dic
 
