@@ -57,6 +57,49 @@ def text_to_words(text):
     words.append(Word(EOS, EOS, None, EOS, None, 0, b, b))
     return words
 
+def flatten_words(words):
+    """
+    >>> text = '너무너무너무/Noun 는/Josa  아이오아이/Noun 의/Josa  노래/Noun 이/Adjective+ㅂ니다/Eomi'
+    >>> words = text_to_words(text)
+    $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),
+       Word(너무너무너무, 너무너무너무/Noun, len=6, b=0, e=6),
+       Word(는, 는/Josa, len=1, b=6, e=7),
+       Word(아이오아이, 아이오아이/Noun, len=5, b=7, e=12),
+       Word(의, 의/Josa, len=1, b=12, e=13),
+       Word(노래, 노래/Noun, len=2, b=13, e=15),
+       Word(이+ㅂ니다, 이/Adjective + ㅂ니다/Eomi, len=4, b=15, e=18),
+       Word(EOS, EOS/EOS, len=0, b=18, e=18)]
+
+    >>> words_ = flatten_words(words)
+    $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),
+       Word(너무너무너무, 너무너무너무/Noun, len=6, b=0, e=6),
+       Word(는, 는/Josa, len=1, b=6, e=7),
+       Word(아이오아이, 아이오아이/Noun, len=5, b=7, e=12),
+       Word(의, 의/Josa, len=1, b=12, e=13),
+       Word(노래, 노래/Noun, len=2, b=13, e=15),
+       Word(이, 이/Adjective, len=1, b=15, e=16),
+       Word(ㅂ니다, ㅂ니다/Eomi, len=2, b=16, e=18),
+       Word(EOS, EOS/EOS, len=0, b=18, e=18)]
+    """
+
+    words_ = []
+    for word in words:
+        if word.tag1 is None:
+            words_.append(word)
+            continue
+        len0 = len(word.morph0)
+        len1 = len(word.morph1)
+        b = word.b
+        m = word.b + len0
+        e = word.e
+        if 'ㄱ' <= word.morph1[0] <= 'ㅎ':
+            len1 -= 1
+        word0 = Word(word.morph0, word.morph0, None, word.tag0, None, len0, b, m)
+        word1 = Word(word.morph1, word.morph1, None, word.tag1, None, len1, m, e)
+        words_.append(word0)
+        words_.append(word1)
+    return words_
+
 class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 len b e')):
     """
     Usage
