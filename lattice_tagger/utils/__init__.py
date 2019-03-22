@@ -1,3 +1,5 @@
+from .data import SentMorphemePairs
+from .data import FeatureDecoratedPairs
 from .dictionary import BaseMorphemeDictionary
 from .dictionary import DemoMorphemeDictionary
 from .dictionary import DemoWordDictionary
