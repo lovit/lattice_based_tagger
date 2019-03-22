@@ -74,27 +74,41 @@ def text_to_words(sent, morph_text):
 
 def flatten_words(words):
     """
-    >>> text = '너무너무너무/Noun 는/Josa  아이오아이/Noun 의/Josa  노래/Noun 이/Adjective+ㅂ니다/Eomi'
-    >>> words = text_to_words(text)
-    $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),
-       Word(너무너무너무, 너무너무너무/Noun, len=6, b=0, e=6),
-       Word(는, 는/Josa, len=1, b=6, e=7),
-       Word(아이오아이, 아이오아이/Noun, len=5, b=7, e=12),
-       Word(의, 의/Josa, len=1, b=12, e=13),
-       Word(노래, 노래/Noun, len=2, b=13, e=15),
-       Word(이+ㅂ니다, 이/Adjective + ㅂ니다/Eomi, len=4, b=15, e=18),
-       Word(EOS, EOS/EOS, len=0, b=18, e=18)]
+        >>> sent = '너무너무너무는 아이오아이의 노래 입니다'
+        >>> morph_text = '너무너무너무/Noun 는/Josa 아이오아이/Noun 의/Josa 노래/Noun 이/Adjective+ㅂ니다/Eomi'
+        >>> words = text_to_words(sent, morph_text)
+        >>> words_ = flatten_words(words)
 
-    >>> words_ = flatten_words(words)
-    $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),
-       Word(너무너무너무, 너무너무너무/Noun, len=6, b=0, e=6),
-       Word(는, 는/Josa, len=1, b=6, e=7),
-       Word(아이오아이, 아이오아이/Noun, len=5, b=7, e=12),
-       Word(의, 의/Josa, len=1, b=12, e=13),
-       Word(노래, 노래/Noun, len=2, b=13, e=15),
-       Word(이, 이/Adjective, len=1, b=15, e=16),
-       Word(ㅂ니다, ㅂ니다/Eomi, len=2, b=16, e=18),
-       Word(EOS, EOS/EOS, len=0, b=18, e=18)]
+        $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),
+           Word(너무너무너무, 너무너무너무/Noun, len=6, b=0, e=6),
+           Word(는, 는/Josa, len=1, b=6, e=7),
+           Word(아이오아이, 아이오아이/Noun, len=5, b=7, e=12),
+           Word(의, 의/Josa, len=1, b=12, e=13),
+           Word(노래, 노래/Noun, len=2, b=13, e=15),
+           Word(이, 이/Adjective, len=1, b=15, e=16),
+           Word(ㅂ니다, ㅂ니다/Eomi, len=2, b=16, e=18),
+           Word(EOS, EOS/EOS, len=0, b=18, e=18)]
+
+
+        >>> sent = '봤어 영화관 가면 늘 보는 정도인데 뭘'
+        >>> morph_text = '보/Verb+았어/Eomi 영화관/Noun 가/Verb+면/Eomi 늘/Adverb 보/Verb+는/Eomi 정도/Noun+인데/Josa 무엇/Pronoun+을/Josa'
+        >>> words = text_to_words(sent, morph_text)
+        >>> words_ = flatten_words(words)
+
+        $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),
+           Word(보, 보/Verb, len=1, b=0, e=1),
+           Word(았어, 았어/Eomi, len=2, b=1, e=2),
+           Word(영화관, 영화관/Noun, len=3, b=2, e=5),
+           Word(가, 가/Verb, len=1, b=5, e=6),
+           Word(면, 면/Eomi, len=1, b=6, e=7),
+           Word(늘, 늘/Adverb, len=1, b=7, e=8),
+           Word(보, 보/Verb, len=1, b=8, e=9),
+           Word(는, 는/Eomi, len=1, b=9, e=10),
+           Word(정도, 정도/Noun, len=2, b=10, e=12),
+           Word(인데, 인데/Josa, len=2, b=12, e=14),
+           Word(무엇, 무엇/Pronoun, len=2, b=14, e=15),
+           Word(을, 을/Josa, len=1, b=15, e=15),
+           Word(EOS, EOS/EOS, len=0, b=15, e=15)]
     """
 
     words_ = []
@@ -105,7 +119,7 @@ def flatten_words(words):
         len0 = len(word.morph0)
         len1 = len(word.morph1)
         b = word.b
-        m = word.b + len0
+        m = min(word.e, word.b + len0)
         e = word.e
         if 'ㄱ' <= word.morph1[0] <= 'ㅎ':
             len1 -= 1
