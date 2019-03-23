@@ -345,6 +345,6 @@ def sentence_lookup_as_graph(sent, eojeol_lookup):
                         continue
                     edges.append([from_word, to_word, 0])
 
-    nodes = [BOS, EOS_word] + words
+    nodes = [BOS_word, EOS_word] + words
 
     return nodes, edges
