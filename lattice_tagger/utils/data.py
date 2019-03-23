@@ -4,7 +4,7 @@ from .utils import left_space_tag
 from .utils import get_process_memory
 
 
-class SentMorphemePairs:
+class WordMorphemePairs:
     """
     >>> train_data = SentMorphemePairs('../data/train.txt')
     >>> for sent, morphs in train_data:
@@ -22,8 +22,8 @@ class SentMorphemePairs:
         def wrapup(eojeols, morphs):
             if not eojeols:
                 return '', '', [], []
-            char_str = ' '.join(eojeols)
-            morph_str = ' '.join(morphs)
+            char_str = '  '.join(eojeols)
+            morph_str = '  '.join(morphs)
             return char_str, morph_str, [], []
 
         n_sents = 0
