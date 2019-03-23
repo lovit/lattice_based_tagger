@@ -1,5 +1,6 @@
 import json
 import os
+import psutil
 
 
 installpath = os.path.sep.join(
@@ -48,3 +49,9 @@ def left_space_tag(sent):
         else:
             idx += 1
     return chars, tags
+
+def get_process_memory():
+    """It returns the memory usage of current process"""
+
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss / (1024 ** 3)
