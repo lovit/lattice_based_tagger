@@ -1,3 +1,6 @@
+from ..tagset import Unk
+
+
 class WordsEncoder:
     def __init__(self, feature_dic=None):
         self.feature_dic = feature_dic
@@ -90,7 +93,8 @@ def trigram_encoder_(word_i, word_j, word_k, word_is_L=None):
         features.append((5, word_k.word, word_k.tag0, is_l_tag))
 
     # unknown length feature
-    features.append((6, min(8, word_k.b - word_j.e)))
+    if word_j.tag0 == Unk:
+        features.append((6, min(8, word_j.len)))
 
     # trigram feature
     if word_i is not None:
