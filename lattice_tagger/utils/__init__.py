@@ -1,4 +1,4 @@
-from .data import SentMorphemePairs
+from .data import WordMorphemePairs
 from .dictionary import BaseMorphemeDictionary
 from .dictionary import DemoMorphemeDictionary
 from .dictionary import DemoWordDictionary
