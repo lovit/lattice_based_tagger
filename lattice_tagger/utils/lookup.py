@@ -320,15 +320,7 @@ def sentence_lookup_as_graph(sent, eojeol_lookup):
         return -1
 
     n = len(sent.replace(' ',''))
-    words = sentence_lookup(sent, eojeol_lookup)
-
-    # if there exist no word in dictionary
-    if not words:
-        return [], []
-
-    bindex = [[] for _ in range(n)]
-    for word in words:
-        bindex[word.b].append(word)
+    bindex = sentence_lookup_as_begin_index(sent, eojeol_lookup)
 
     BOS_word = Word(BOS, BOS, None, BOS, None, 0, 0, 0)
     EOS_word = Word(EOS, EOS, None, EOS, None, 0, n, n)
@@ -346,5 +338,29 @@ def sentence_lookup_as_graph(sent, eojeol_lookup):
                     edges.append([from_word, to_word, 0])
 
     nodes = [BOS_word, EOS_word] + words
-
     return nodes, edges
+
+def sentence_lookup_as_begin_index(sent, eojeol_lookup):
+    """
+        >>> eojeol_lookup = WordLookup(dictionary)
+
+        >>> sentence_lookup_as_begin_index('공연을했다', eojeol_lookup)
+        $ [[Word(공연, 공연/Noun, len=2, b=0, e=2)],
+           [],
+           [Word(을, 을/Josa, len=1, b=2, e=3)],
+           [Word(했다, 하/Verb + 았다/Eomi, len=2, b=3, e=5)],
+           [Word(다, 다/Eomi, len=1, b=4, e=5)]]
+    """
+
+    n = len(sent.replace(' ',''))
+    words = sentence_lookup(sent, eojeol_lookup)
+
+    # if there exist no word in dictionary
+    if not words:
+        return [], []
+
+    bindex = [[] for _ in range(n)]
+    for word in words:
+        bindex[word.b].append(word)
+
+    return bindex
