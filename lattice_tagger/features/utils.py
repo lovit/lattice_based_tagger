@@ -5,18 +5,27 @@ from lattice_tagger.utils import flatten_words
 from lattice_tagger.utils import left_space_tag
 
 
-def scan_features(sent_morph_pairs, encoder, min_count=1, verbose=False, debug=False):
+def scan_features(word_morph_pairs, encoder, min_count=1, predefined_features=None,
+    verbose=False, debug=False, flatten=False):
+
     """
     >>> idx_to_feature, feature_to_idx, idx_to_count = scan_features(sent_morph_pairs, encoder, min_count)
     """
-    counter = defaultdict(int)
-    for i, (sent, morph_text) in enumerate(sent_morph_pairs):
+
+    if predefined_features is None:
+        predefined_features = {}
+
+    counter = defaultdict(int, predefined_features)
+    for i, (word_text, morph_text) in enumerate(word_morph_pairs):
         if verbose and i % 1000 == 0:
             mem = get_process_memory()
             num = len(counter)
             print('\rscanning {} th pairs ... mem = {:.3} GB, {} features'.format(i, mem, num), end='')
         try:
-            words = flatten_words(text_to_words(sent, morph_text))
+            words = text_to_words(word_text, morph_text)
+            if flatten:
+                words = flatten_words(words)
+            sent = word_text.replace('  ', '//').replace(' ', '').replace('//', ' ')
             chars, is_l_tag = left_space_tag(sent)
             feature_seq = encoder.transform(words, is_l_tag)
             for features in feature_seq:
@@ -39,15 +48,12 @@ def scan_features(sent_morph_pairs, encoder, min_count=1, verbose=False, debug=F
         num = len(counter)
         print('\rscanning from {} pairs. mem = {:.3} GB, {} features'.format(i+1, mem, num))
 
-    idx_to_feature, feature_to_idx, idx_to_count = indexing(counter)
-    return idx_to_feature, feature_to_idx, idx_to_count
+    idx_to_feature = [feature for feature, _ in sorted(
+        counter.items(), key=lambda x:(x[0][0], -x[1], x[0][1]))]
+    idx_to_count = [counter[f] for f in idx_to_feature]
+    feature_to_idx = {feature:idx for idx, feature in enumerate(idx_to_feature)}
 
-def indexing(counter):
-    idx_to_item = [feature for feature, _ in sorted(
-        counter.items(), key=lambda x:(x[0][0], -x[1]))]
-    idx_to_count = [counter[f] for f in idx_to_item]
-    item_to_idx = {feature:idx for idx, feature in enumerate(idx_to_item)}
-    return idx_to_item, item_to_idx, idx_to_count
+    return idx_to_feature, feature_to_idx, idx_to_count
 
 def scan_dictionary(sent_morph_pairs, min_count=1):
     counter = defaultdict(int)
