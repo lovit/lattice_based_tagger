@@ -330,18 +330,21 @@ def sentence_lookup_as_graph(sent, eojeol_lookup):
     for word in words:
         bindex[word.b].append(word)
 
-    edges = [[BOS, word, 0] for word in bindex[closest(0, n, bindex)]]
+    BOS_word = Word(BOS, BOS, None, BOS, None, 0, 0, 0)
+    EOS_word = Word(EOS, EOS, None, EOS, None, 0, n, n)
+
+    edges = [[BOS_word, word, 0] for word in bindex[closest(0, n, bindex)]]
     for words_in_b in bindex:
         for from_word in words_in_b:
             adj_b = closest(from_word.e, n, bindex)
             if adj_b == -1:
-                edges.append([from_word, EOS, 0])
+                edges.append([from_word, EOS_word, 0])
             else:
                 for to_word in bindex[adj_b]:
                     if from_word.len == 0 and to_word.len == 0:
                         continue
                     edges.append([from_word, to_word, 0])
 
-    nodes = [BOS, EOS] + words
+    nodes = [BOS, EOS_word] + words
 
     return nodes, edges
