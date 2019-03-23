@@ -1,7 +1,3 @@
-import numpy as np
-coefficients = (np.random.random_sample(1000) - 0.5).tolist()
-
-
 class Beam:
     """
         >>> word0 = Word('BOS', 'BOS', None, 'BOS', None, 0, 0, 0)
