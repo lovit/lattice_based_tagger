@@ -1,5 +1,6 @@
 from collections import namedtuple
 from lattice_tagger.utils import Word
+from lattice_tagger.utils import flatten_words
 from lattice_tagger.tagset import *
 
 
@@ -55,6 +56,9 @@ def sentence_lookup(sent, eojeol_lookup):
 
 
 class EojeolLookup:
+    def __init__(self, flatten=False):
+        self.flatten = flatten
+
     def __call__(self, eojeol, offset=0):
         return self.lookup(eojeol, offset)
 
@@ -62,28 +66,38 @@ class EojeolLookup:
         raise NotImplemented
 
 class LRLookup(EojeolLookup):
-    def __init__(self, dictionary, prefer_exact_match=True):
+    def __init__(self, dictionary, prefer_exact_match=True, flatten=False):
+        super(EojeolLookup, self).__init__(flatten)
         self.dictionary = dictionary
         self.prefer_exact_match = prefer_exact_match
 
     def lookup(self, eojeol, offset=0):
-        return lr_lookup(eojeol, self.dictionary, offset, self.prefer_exact_match)
+        words = lr_lookup(eojeol, self.dictionary, offset, self.prefer_exact_match)
+        if self.flatten:
+            words = flatten_words(words)
+        return words
 
 class SubwordLookup(EojeolLookup):
-    def __init__(self, dictionary, prefer_exact_match=True):
+    def __init__(self, dictionary, prefer_exact_match=True, flatten=False):
+        super(SubwordLookup, self).__init__(flatten)
         self.dictionary = dictionary
         self.prefer_exact_match = prefer_exact_match
 
     def lookup(self, eojeol, offset=0):
-        return subword_lookup(eojeol, self.dictionary, offset, self.prefer_exact_match)
+        words = subword_lookup(eojeol, self.dictionary, offset, self.prefer_exact_match)
+        if self.flatten:
+            words = flatten_words(words)
+        return words
 
 class WordLookup(EojeolLookup):
-    def __init__(self, dictionary, prefer_exact_match=True, standalones=None, max_len=-1):
+    def __init__(self, dictionary, prefer_exact_match=True, standalones=None, max_len=-1, flatten=False):
         if not hasattr(dictionary, 'surface_to_lemma'):
             raise ValueError('dictionary must be MorphemeDictionary')
 
         if standalones is None:
             standalones = [Noun, Adverb, Exclamation, Determiner]
+
+        super(WordLookup, self).__init__(flatten)
 
         self.dictionary = dictionary
         self.prefer_exact_match = prefer_exact_match
@@ -94,8 +108,11 @@ class WordLookup(EojeolLookup):
             self.max_len = max_len
 
     def lookup(self, eojeol, offset=0):
-        return word_lookup(eojeol, self.dictionary, offset,
+        words = word_lookup(eojeol, self.dictionary, offset,
             self.prefer_exact_match, self.standalones, self.max_len)
+        if self.flatten:
+            words = flatten_words(words)
+        return words
 
     def _find_max_len(self, dictionary, standalones):
         standalones_ = set(standalones)
@@ -321,6 +338,8 @@ def sentence_lookup_as_graph(sent, eojeol_lookup):
                 edges.append([from_word, EOS, 0])
             else:
                 for to_word in bindex[adj_b]:
+                    if from_word.len == 0 and to_word.len == 0:
+                        continue
                     edges.append([from_word, to_word, 0])
 
     nodes = [BOS, EOS] + words
