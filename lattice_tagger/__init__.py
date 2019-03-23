@@ -1,3 +1,4 @@
+from . import beam
 from . import features
 from . import utils
 
