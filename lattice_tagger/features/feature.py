@@ -54,13 +54,14 @@ def trigram_encoder(words, word_is_L=None):
     trigram : (wi, ti), (wj, tj), (wk, tk)
     current positiion : k
 
-    0 : (wj, wk morph, tk) # disambiguate wk with tk (이/Josa, 이/Adjective)
+    0 : (wj, wk, tk) # disambiguate wk with tk (이/Josa, 이/Adjective)
     1 : (wj, tk)
-    2 : (tj, wk morph, tk)
+    2 : (tj, wk, tk)
     3 : (tj, tk)
     4 : (len(wk))
     5 : (wk morph, tk, wk is L-part of eojeol)
-    6 : (wi, wj, wk morph)
+    6 : unknown length between (wj, wk)
+    7 : (wi, wj, wk morph)
     """
     n = len(words) - 2 # include BOS, EOS
     words_ = [None] + words
@@ -73,9 +74,9 @@ def trigram_encoder(words, word_is_L=None):
 def trigram_encoder_(word_i, word_j, word_k, word_is_L=None):
     # bigram feature
     features = [
-        (0, word_j.morph0, word_k.morph0, word_k.tag0),
-        (1, word_j.morph0, word_k.tag0),
-        (2, word_j.tag0, word_k.morph0, word_k.tag0),
+        (0, word_j.word, word_k.word, word_k.tag0),
+        (1, word_j.word, word_k.tag0),
+        (2, word_j.tag0, word_k.word, word_k.tag0),
         (3, word_j.tag0, word_k.tag0),
         (4, word_k.len)
     ]
@@ -86,10 +87,13 @@ def trigram_encoder_(word_i, word_j, word_k, word_is_L=None):
             is_l_tag = False
         else:
             is_l_tag = word_is_L[word_k.b]
-        features.append((5, word_k.morph0, word_k.tag0, is_l_tag))
+        features.append((5, word_k.word, word_k.tag0, is_l_tag))
+
+    # unknown length feature
+    features.append((6, min(8, word_k.b - word_j.e)))
 
     # trigram feature
     if word_i is not None:
-        features.append((6, word_i.morph0, word_j.morph0, word_k.morph0))
+        features.append((7, word_i.word, word_j.word, word_k.word))
 
     return features
