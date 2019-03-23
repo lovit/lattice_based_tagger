@@ -1,5 +1,4 @@
 from .data import SentMorphemePairs
-from .data import FeatureDecoratedPairs
 from .dictionary import BaseMorphemeDictionary
 from .dictionary import DemoMorphemeDictionary
 from .dictionary import DemoWordDictionary
@@ -18,3 +17,4 @@ from .utils import installpath
 from .utils import load_rules
 from .utils import write_rules
 from .utils import left_space_tag
+from .utils import get_process_memory

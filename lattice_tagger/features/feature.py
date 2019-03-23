@@ -3,14 +3,14 @@ class WordsEncoder:
         self.feature_dic = feature_dic
         raise NotImplemented('Inherit WordsEncoder and implement encode function')
 
-    def __call__(self, words, *args):
-        return self.encode(words, *args)
-
     def is_trained(self):
         return self.feature_dic is not None
 
     def encode(self, words, *args):
         raise NotImplemented('Inherit WordsEncoder and implement encode function')
+
+    def transform(self, words, *args):
+        raise NotImplemented
 
     def _filter(self, feature_seq):
         if self.feature_dic is None:
@@ -37,11 +37,17 @@ class SimpleTrigramEncoder(WordsEncoder):
         return self.feature_dic is not None
 
     def encode(self, words, is_l=None):
+        if self.feature_dic is None:
+            raise ValueError('Insert feature_dic first')
+        feature_seq = self.transform(words, is_l)
+        idx_seq = [[self.feature_dic[f] for f in features] for features in feature_seq]
+        return idx_seq
+
+    def transform(self, words, is_l=None):
         feature_seq = trigram_encoder(words, is_l)
         if self.feature_dic is not None:
             feature_seq = self._filter(feature_seq)
         return feature_seq
-
 
 def trigram_encoder(words, word_is_L=None):
     """

@@ -1,3 +1,9 @@
+from .dictionary import text_to_words
+from .dictionary import flatten_words
+from .utils import left_space_tag
+from .utils import get_process_memory
+
+
 class SentMorphemePairs:
     """
     >>> train_data = SentMorphemePairs('../data/train.txt')
@@ -59,33 +65,3 @@ class SentMorphemePairs:
                     continue
                 self.len += 1
         return self.len
-
-class FeatureDecoratedPairs:
-    def __init__(self, sent_morph_pairs, encoder, checkpoints=-1,
-        only_features=False, verbose=False):
-        self.pairs = sent_morph_pairs
-        self.encoder = encoder
-        self.checkpoints = checkpoints
-        self.only_features = only_features
-        self.verbose = verbose
-
-    def __iter__(self):
-        for i, (sent, morph_text) in enumerate(self.pairs):
-            if self.checkpoints > 0 and i % checkpoints:
-                print('\rprocessing {} sents ... '.format(i), end='')
-            try:
-                words = text_to_words(sent, morph_text)
-                words_ = flatten_words(words)
-                chars, is_l = left_space_tag(sent)
-                feature_seq = self.encoder(words_, is_l)
-                if self.only_features:
-                    yield feature_seq
-                else:
-                    yield sent.split(), words, feature_seq
-            except Exception as e:
-                if self.verbose:
-                    print(e)
-                    print('sentence idx = {}'.format(i))
-                    print('sent : {}'.format(sent))
-                    print('morphs : {}'.format(morph_text), end='\n\n')
-                continue
