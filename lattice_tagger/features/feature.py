@@ -1,4 +1,4 @@
-from ..tagset import Unk
+from ..tagset import *
 
 
 class WordsEncoder:
@@ -64,7 +64,8 @@ def trigram_encoder(words, word_is_L=None):
     4 : (len(wk))
     5 : (wk morph, tk, wk is L-part of eojeol)
     6 : unknown length between (wj, wk)
-    7 : (wi, wj, wk morph)
+    7 : (wi, wj, wk)
+    8 : (wi or wj, wk) if all ti, tj, tk in {Noun, Adjective, Adverb, Verb} # contextual feature
     """
     n = len(words) - 2 # include BOS, EOS
     words_ = [None] + words
@@ -75,6 +76,9 @@ def trigram_encoder(words, word_is_L=None):
     return feature_seq
 
 def trigram_encoder_(word_i, word_j, word_k, word_is_L=None):
+
+    contextual_tags = {Noun, Adverb, Adjective, Verb}
+
     # bigram feature
     features = [
         (0, word_j.word, word_k.word, word_k.tag0),
@@ -99,5 +103,12 @@ def trigram_encoder_(word_i, word_j, word_k, word_is_L=None):
     # trigram feature
     if word_i is not None:
         features.append((7, word_i.word, word_j.word, word_k.word))
+
+    # contextual feature
+    if word_k.tag0 in contextual_tags:
+        if word_j.tag0 in contextual_tags:
+            features.append((8, word_j.morph0, word_k.morph0))
+        elif (word_i is not None) and (word_i.tag0 in contextual_tags):
+            features.append((8, word_i.morph0, word_k.morph0))
 
     return features
