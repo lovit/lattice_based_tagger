@@ -27,7 +27,7 @@ def scan_features(word_morph_pairs, encoder, min_count=1, predefined_features=No
                 words = flatten_words(words)
             sent = word_text.replace('  ', '//').replace(' ', '').replace('//', ' ')
             chars, is_l_tag = left_space_tag(sent)
-            feature_seq = encoder.transform(words, is_l_tag)
+            feature_seq = encoder.transform_sequence(words, is_l_tag)
             for features in feature_seq:
                 for feature in features:
                     counter[feature] += 1

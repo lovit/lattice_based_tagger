@@ -9,17 +9,20 @@ class WordsEncoder:
     def is_trained(self):
         return self.feature_dic is not None
 
-    def encode(self, words, *args):
-        raise NotImplemented('Inherit WordsEncoder and implement encode function')
+    def encode_sequence(self, words, *args):
+        raise NotImplemented('Inherit WordsEncoder and implement encode_sequence function')
 
-    def transform(self, words, *args):
-        raise NotImplemented
+    def encode_word(self, *args):
+        raise NotImplemented('Inherit WordsEncoder and implement encode_word function')
 
-    def _filter(self, feature_seq):
-        if self.feature_dic is None:
-            raise ValueError('Insert feature_dic first')
-        filtered_seq = [[f for f in features if f in self.feature_dic] for features in feature_seq]
-        return filtered_seq
+    def transform_sequence(self, words, *args):
+        raise NotImplemented('Inherit WordsEncoder and implement transform_sequence function')
+
+    def transform_word(self, *args):
+        raise NotImplemented('Inherit WordsEncoder and implement transform_word function')
+
+    def _filter(self, features):
+        return [f for f in features if f in self.feature_dic]
 
 class SimpleTrigramEncoder(WordsEncoder):
     """
@@ -36,23 +39,33 @@ class SimpleTrigramEncoder(WordsEncoder):
     def __init__(self, feature_dic=None):
         self.feature_dic = feature_dic
 
-    def is_trained(self):
-        return self.feature_dic is not None
-
-    def encode(self, words, is_l=None):
-        if self.feature_dic is None:
+    def encode_sequence(self, words, char_is_l=None):
+        if not self.is_trained():
             raise ValueError('Insert feature_dic first')
-        feature_seq = self.transform(words, is_l)
+        feature_seq = self.transform_sequence(words, char_is_l)
         idx_seq = [[self.feature_dic[f] for f in features] for features in feature_seq]
         return idx_seq
 
-    def transform(self, words, is_l=None):
-        feature_seq = trigram_encoder(words, is_l)
-        if self.feature_dic is not None:
-            feature_seq = self._filter(feature_seq)
+    def encode_word(self, word_i, word_j, word_k, char_is_l=None):
+        features = self.transform_word(word_i, word_j, word_k, char_is_l)
+        idxs = [self.feature_dic[f] for f in features]
+        return idxs
+
+    def transform_sequence(self, words, char_is_l=None):
+        n = len(words) - 2 # include BOS, EOS
+        words_ = [None] + words
+        feature_seq = []
+        for word_i, word_j, word_k in zip(words_, words, words[1:-1]):
+            feature_seq.append(self.transform_word(word_i, word_j, word_k, char_is_l))
         return feature_seq
 
-def trigram_encoder(words, word_is_L=None):
+    def transform_word(self, word_i, word_j, word_k, char_is_l=None):
+        features = trigram_encoder(word_i, word_j, word_k, char_is_l)
+        if self.is_trained():
+            features = self._filter(features)
+        return features
+
+def trigram_encoder(word_i, word_j, word_k, char_is_l=None):
     """
     trigram : (wi, ti), (wj, tj), (wk, tk)
     current positiion : k
@@ -67,15 +80,6 @@ def trigram_encoder(words, word_is_L=None):
     7 : (wi, wj, wk)
     8 : (wi or wj, wk) if all ti, tj, tk in {Noun, Adjective, Adverb, Verb} # contextual feature
     """
-    n = len(words) - 2 # include BOS, EOS
-    words_ = [None] + words
-
-    feature_seq = []
-    for word_i, word_j, word_k in zip(words_, words, words[1:-1]):
-        feature_seq.append(trigram_encoder_(word_i, word_j, word_k, word_is_L))
-    return feature_seq
-
-def trigram_encoder_(word_i, word_j, word_k, word_is_L=None):
 
     contextual_tags = {Noun, Adverb, Adjective, Verb}
 
@@ -89,11 +93,11 @@ def trigram_encoder_(word_i, word_j, word_k, word_is_L=None):
     ]
 
     # unigram, word is L feature
-    if word_is_L is not None:
+    if char_is_l is not None:
         if word_k.b == word_k.e:
             is_l_tag = False
         else:
-            is_l_tag = word_is_L[word_k.b]
+            is_l_tag = char_is_l[word_k.b]
         features.append((5, word_k.word, word_k.tag0, is_l_tag))
 
     # unknown length feature
