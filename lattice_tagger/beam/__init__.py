@@ -6,4 +6,4 @@ from .score_funcs import BeamScoreFunctions
 from .score_funcs import RegularizationScore
 from .score_funcs import MorphemePreferenceScore
 from .score_funcs import WordPreferenceScore
-from .score_funcs import FeatureScore
+from .score_funcs import SimpleTrigramFeatureScore

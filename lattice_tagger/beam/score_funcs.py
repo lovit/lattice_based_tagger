@@ -55,23 +55,25 @@ class WordPreferenceScore(BeamScoreFunction):
     def score(self, seq, word_k):
         return self.tag_to_word.get(word_k.tag0, {}).get(word_k.word, 0)
 
-class FeatureScore(BeamScoreFunction):
-    def __init__(self, coefficient, encoder):
-        self.coefficient = coefficient
+class SimpleTrigramFeatureScore(BeamScoreFunction):
+    def __init__(self, coefficients, encoder):
+
+        if not encoder.is_trained():
+            raise ValueError('Encoder must be trained first')
+
+        num_features = len(coefficients)
+        if len(encoder.feature_dic) != num_features:
+            raise ValueError('Encoder and coefficients have different size features')
+
+        self.coefficients = coefficients
         self.encoder = encoder
-        self.n_features = len(coefficient)
+        self.num_features = num_features
 
     def score(self, seq, word_k):
-        if len(seq.sequences) == 1:
-            word_i = None
-        else:
-            word_i = seq.sequences[-2]
+        word_i = None if len(seq.sequences) == 1 else seq.sequences[-2]
         word_j = seq.sequences[-1]
-
-        # TODO
-        # featurize
-
-        # cumulate feature coefficient
+        feature_idxs = self.encoder.encode_word(word_i, word_j, word_k)
         score = 0
-
+        for idx in feature_idxs:
+            score += self.coefficients[idx]
         return score
