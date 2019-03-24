@@ -1,4 +1,49 @@
 from ..tagset import *
+from lattice_tagger.utils import Word
+
+
+def beam_search(bindex, len_sent, chars, funcs, max_len=8, debug=False, **kargs):
+
+    bos = Sequence([Word(BOS, BOS, None, BOS, None, 0, 0, 0)], 0)
+    beam = Beam([[bos]])
+
+    for e in range(1, len_sent + 1):
+
+        growns = []
+
+        # find candidates
+        b_min = max(0, e - max_len)
+        for b in range(b_min, e):
+            immatures = beam[b]
+            expandes = [word for word in bindex[b] if word.e == e]
+
+            # prepare unknown Word
+            if not expandes:
+                sub = chars[b:e]
+                expandes = [Word(sub, sub, None, Unk, None, e - b, b, e)]
+
+            # score
+            for immature in immatures:
+                for expand in expandes:
+                    # skip successive two unknown words
+                    if (immature.num_unk > 0) and (expand.tag0 == Unk) and (b_min < b):
+                        continue
+                    # calculate
+                    score_increment = 0
+                    for func in funcs:
+                        score_increment += func(immature, expand, **kargs)
+                    growns.append(immature.add(expand, score_increment))
+
+        # append growns to beam
+        beam.append(growns)
+
+        if debug:
+            print('\n{}\nEnd point = {}, len(growns) = {}\n'.format('-'*40, e, len(growns)))
+            growns = sorted(growns, key=lambda x:-x.score)
+            for grown in growns:
+                print(grown, end='\n\n')
+
+    return beam.beam[-1]
 
 class Beam:
     """
@@ -21,7 +66,7 @@ class Beam:
 
     def append(self, candidates):
         # descending order of score
-        candidates = sorted(candidates, key=lambda x:x.score)[:self.k]
+        candidates = sorted(candidates, key=lambda x:-x.score)[:self.k]
         self.beam += [candidates]
 
 class Sequence:
