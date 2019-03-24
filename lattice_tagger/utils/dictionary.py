@@ -75,14 +75,22 @@ def text_to_words(word_text, morph_text, sent=None):
            Word(EOS, EOS/EOS, len=0, b=24, e=24)]
     """
 
+    word_text = word_text.split('  ')
+    morph_text = morph_text.split('  ')
+
+    nw = len(word_text)
+    nm = len(morph_text)
+    if nw != nm:
+        raise ValueError('Different length of eojeols in (word_text=%d, morph_text=%d)' % (nw, nm))
+
     if sent is None:
-        sent = ' '.join(eojeol.replace(' ', '') for eojeol in word_text.split('  '))
+        sent = ' '.join(eojeol.replace(' ', '') for eojeol in word_text)
 
     chars, ltags = left_space_tag(sent)
 
     b = 0
     words = [Word(BOS, BOS, None, BOS, None, 0, 0, 0, False)]
-    for eojeols, morphs in zip(word_text.split('  '), morph_text.split('  ')):
+    for eojeols, morphs in zip(word_text, morph_text):
         for word, morph in zip(eojeols.split(), morphs.split()):
             morphtags = str_to_morphtag(morph)
             morph0, tag0 = morphtags[0]
