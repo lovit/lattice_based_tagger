@@ -1,3 +1,5 @@
+from ..tagset import *
+
 class Beam:
     """
         >>> word0 = Word('BOS', 'BOS', None, 'BOS', None, 0, 0, 0)
@@ -41,13 +43,21 @@ class Sequence:
           score = 1.3
     """
 
-    def __init__(self, sequences, score):
+    def __init__(self, sequences, score, num_unk=0):
         self.sequences = sequences
         self.score = score
+        self.num_unk = num_unk
 
     def add(self, node, score_increment):
-        return Sequence([node for node in self.sequences] + [node], self.score + score_increment)
+        num_unk = self.num_unk + 1 if node.tag0 == Unk else 0
+        new_nodes = [n for n in self.sequences] + [node]
+        new_score = self.score + score_increment
+        return Sequence(new_nodes, new_score, num_unk)
 
     def __repr__(self):
-        words = '[\n  {}\n]'.format('\n  '.join([str(w) for w in self.sequences]))
-        return 'words = {}\nscore = {}'.format(words, self.score)
+        words = '[\n    {}\n  ]'.format('\n    '.join([str(w) for w in self.sequences]))
+        return 'Sequences(\n  words : {}\n  score : {}\n  num unks in tails : {}\n)'.format(
+            words, self.score, self.num_unk)
+
+    def __str__(self):
+        return self.__repr__()
