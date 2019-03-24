@@ -2,10 +2,10 @@ from ..tagset import *
 from lattice_tagger.utils import Word
 
 
-def beam_search(bindex, len_sent, chars, funcs, max_len=8, debug=False, **kargs):
+def beam_search(bindex, len_sent, chars, score_functions, beam_size=5, max_len=8, debug=False):
 
     bos = Sequence([Word(BOS, BOS, None, BOS, None, 0, 0, 0)], 0)
-    beam = Beam([[bos]])
+    beam = Beam([[bos]], beam_size)
 
     for e in range(1, len_sent + 1):
 
@@ -29,10 +29,8 @@ def beam_search(bindex, len_sent, chars, funcs, max_len=8, debug=False, **kargs)
                     if (immature.num_unk > 0) and (expand.tag0 == Unk) and (b_min < b):
                         continue
                     # calculate
-                    score_increment = 0
-                    for func in funcs:
-                        score_increment += func(immature, expand, **kargs)
-                    growns.append(immature.add(expand, score_increment))
+                    increment = score_functions(immature, expand)
+                    growns.append(immature.add(expand, increment))
 
         # append growns to beam
         beam.append(growns)
