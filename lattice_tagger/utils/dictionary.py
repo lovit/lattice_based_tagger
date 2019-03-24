@@ -2,6 +2,7 @@ from collections import namedtuple
 from glob import glob
 from .utils import installpath
 from .utils import load_rules
+from .utils import left_space_tag
 from lattice_tagger.tagset import *
 
 def str_to_morphtag(word):
@@ -17,7 +18,7 @@ def str_to_morphtag(word):
 
     return [morphtag.split('/',1) for morphtag in word.split('+')]
 
-def text_to_words(word_text, morph_text):
+def text_to_words(word_text, morph_text, sent=None):
     """
     '+' 는 형태소 결합 (활용)을 표현하는 기호이며, 어절의 구분 기호는 두 칸 띄어쓰기, 단어의 구분 기호는 한 칸 띄어쓰기를 이용한다.
 
@@ -28,53 +29,59 @@ def text_to_words(word_text, morph_text):
         >>> text_to_words(word_text, morph_text)
 
         $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),
-           Word(너무너무너무, 너무너무너무/Noun, len=6, b=0, e=6),
+           Word(너무너무너무, 너무너무너무/Noun, len=6, b=0, e=6, L),
            Word(는, 는/Josa, len=1, b=6, e=7),
-           Word(아이오아이, 아이오아이/Noun, len=5, b=7, e=12),
+           Word(아이오아이, 아이오아이/Noun, len=5, b=7, e=12, L),
            Word(의, 의/Josa, len=1, b=12, e=13),
-           Word(노래, 노래/Noun, len=2, b=13, e=15),
-           Word(이+ㅂ니다, 이/Adjective + ㅂ니다/Eomi, len=4, b=15, e=18),
+           Word(노래, 노래/Noun, len=2, b=13, e=15, L),
+           Word(입니다, 이/Adjective + ㅂ니다/Eomi, len=3, b=15, e=18, L),
            Word(EOS, EOS/EOS, len=0, b=18, e=18)]
 
 
-        >>> word_text = '빙수 고명으로 얹는 삶은 단팥과 찰떡 젤리 포장도 나와 있다'
-        >>> morph_text = '빙수/Noun 고명/Noun+으로/Josa 얹/Verb+는/Eomi 삶/Verb+은/Eomi 단팥/Noun+과/Josa 찰떡/Noun 젤리/Noun 포장/Noun+도/Josa 나오/Verb+아/Eomi 있/Verb+다/Eomi'
+        >>> word_text = '빙수  고명으로  얹는  삶은  단팥과  찰떡  젤리  포장도  나와 있다'
+        >>> morph_text = '빙수/Noun  고명/Noun+으로/Josa  얹/Verb+는/Eomi  삶/Verb+은/Eomi  단팥/Noun+과/Josa  찰떡/Noun  젤리/Noun  포장/Noun+도/Josa  나오/Verb+아/Eomi  있/Verb+다/Eomi'
         >>> text_to_words(word_text, morph_text)
 
         $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),
-           Word(빙수, 빙수/Noun, len=2, b=0, e=2),
-           Word(고명으로, 고명/Noun + 으로/Josa, len=4, b=2, e=6),
-           Word(얹는, 얹/Verb + 는/Eomi, len=2, b=6, e=8),
-           Word(삶은, 삶/Verb + 은/Eomi, len=2, b=8, e=10),
-           Word(단팥과, 단팥/Noun + 과/Josa, len=3, b=10, e=13),
-           Word(찰떡, 찰떡/Noun, len=2, b=13, e=15),
-           Word(젤리, 젤리/Noun, len=2, b=15, e=17),
-           Word(포장도, 포장/Noun + 도/Josa, len=3, b=17, e=20),
-           Word(나와, 나오/Verb + 아/Eomi, len=2, b=20, e=22),
-           Word(있다, 있/Verb + 다/Eomi, len=2, b=22, e=24),
-           Word(EOS, EOS/EOS, len=0, b=24, e=24)]
+           Word(빙수, 빙수/Noun, len=2, b=0, e=2, L),
+           Word(고명으로, 고명/Noun + 으로/Josa, len=4, b=2, e=6, L),
+           Word(얹는, 얹/Verb + 는/Eomi, len=2, b=6, e=8, L),
+           Word(삶은, 삶/Verb + 은/Eomi, len=2, b=8, e=10, L),
+           Word(단팥과, 단팥/Noun + 과/Josa, len=3, b=10, e=13, L),
+           Word(찰떡, 찰떡/Noun, len=2, b=13, e=15, L),
+           Word(젤리, 젤리/Noun, len=2, b=15, e=17, L),
+           Word(포장도, 포장/Noun + 도/Josa, len=3, b=17, e=20, L),
+           Word(나와, 나오/Verb + 아/Eomi, len=2, b=20, e=22, L),
+           Word(EOS, EOS/EOS, len=0, b=22, e=22)]
 
-        >>> word_text = '빙수 고명 으로 얹는 삶은 단팥 과 찰떡 젤리 포장 도 나와 있다'
-        >>> morph_text = '빙수/Noun 고명/Noun 으로/Josa 얹/Verb+는/Eomi 삶/Verb+은/Eomi 단팥/Noun 과/Josa 찰떡/Noun 젤리/Noun 포장/Noun 도/Josa 나오/Verb+아/Eomi 있/Verb+다/Eomi'
+
+        >>> word_text = '빙수  고명 으로  얹는  삶은  단팥 과  찰떡  젤리  포장 도  나와 있다'
+        >>> morph_text = '빙수/Noun  고명/Noun 으로/Josa  얹/Verb+는/Eomi  삶/Verb+은/Eomi  단팥/Noun 과/Josa  찰떡/Noun  젤리/Noun  포장/Noun 도/Josa  나오/Verb+아/Eomi 있/Verb+다/Eomi'
+        >>> text_to_words(word_text, morph_text)
         $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),
-           Word(빙수, 빙수/Noun, len=2, b=0, e=2),
-           Word(고명, 고명/Noun, len=2, b=2, e=4),
+           Word(빙수, 빙수/Noun, len=2, b=0, e=2, L),
+           Word(고명, 고명/Noun, len=2, b=2, e=4, L),
            Word(으로, 으로/Josa, len=2, b=4, e=6),
-           Word(얹는, 얹/Verb + 는/Eomi, len=2, b=6, e=8),
-           Word(삶은, 삶/Verb + 은/Eomi, len=2, b=8, e=10),
-           Word(단팥, 단팥/Noun, len=2, b=10, e=12),
+           Word(얹는, 얹/Verb + 는/Eomi, len=2, b=6, e=8, L),
+           Word(삶은, 삶/Verb + 은/Eomi, len=2, b=8, e=10, L),
+           Word(단팥, 단팥/Noun, len=2, b=10, e=12, L),
            Word(과, 과/Josa, len=1, b=12, e=13),
-           Word(찰떡, 찰떡/Noun, len=2, b=13, e=15),
-           Word(젤리, 젤리/Noun, len=2, b=15, e=17),
-           Word(포장, 포장/Noun, len=2, b=17, e=19),
+           Word(찰떡, 찰떡/Noun, len=2, b=13, e=15, L),
+           Word(젤리, 젤리/Noun, len=2, b=15, e=17, L),
+           Word(포장, 포장/Noun, len=2, b=17, e=19, L),
            Word(도, 도/Josa, len=1, b=19, e=20),
-           Word(나와, 나오/Verb + 아/Eomi, len=2, b=20, e=22),
+           Word(나와, 나오/Verb + 아/Eomi, len=2, b=20, e=22, L),
            Word(있다, 있/Verb + 다/Eomi, len=2, b=22, e=24),
            Word(EOS, EOS/EOS, len=0, b=24, e=24)]
     """
 
+    if sent is None:
+        sent = ' '.join(eojeol.replace(' ', '') for eojeol in word_text.split('  '))
+
+    chars, ltags = left_space_tag(sent)
+
     b = 0
-    words = [Word(BOS, BOS, None, BOS, None, 0, 0, 0)]
+    words = [Word(BOS, BOS, None, BOS, None, 0, 0, 0, False)]
     for eojeols, morphs in zip(word_text.split('  '), morph_text.split('  ')):
         for word, morph in zip(eojeols.split(), morphs.split()):
             morphtags = str_to_morphtag(morph)
@@ -82,52 +89,50 @@ def text_to_words(word_text, morph_text):
             n = len(word)
             e = b + n
             if len(morphtags) == 1:
-                word = Word(word, morph0, None, tag0, None, n, b, e)
+                word = Word(word, morph0, None, tag0, None, n, b, e, ltags[b] == 1)
             elif len(morphtags) == 2:
                 morph1, tag1 = morphtags[1]
-                word = Word(word, morph0, morph1, tag0, tag1, n, b, e)
+                word = Word(word, morph0, morph1, tag0, tag1, n, b, e, ltags[b] == 1)
             else:
                 raise ValueError('Word (%s) consists of three or more morphemes' % word)
             b += n
             words.append(word)
-    words.append(Word(EOS, EOS, None, EOS, None, 0, b, b))
+    words.append(Word(EOS, EOS, None, EOS, None, 0, b, b, False))
     return words
 
 def flatten_words(words):
     """
-        >>> word_text = '너무너무너무 는 아이오아이 의 노래 입니다'
-        >>> morph_text = '너무너무너무/Noun 는/Josa 아이오아이/Noun 의/Josa 노래/Noun 이/Adjective+ㅂ니다/Eomi'
-        >>> words = text_to_words(word_text, morph_text)
-        >>> words_ = flatten_words(words)
+        >>> word_text = '너무너무너무 는  아이오아이 의  노래  입니다'
+        >>> morph_text = '너무너무너무/Noun 는/Josa  아이오아이/Noun 의/Josa  노래/Noun  이/Adjective+ㅂ니다/Eomi'
+        >>> flatten_words(text_to_words(word_text, morph_text))
 
         $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),
-           Word(너무너무너무, 너무너무너무/Noun, len=6, b=0, e=6),
+           Word(너무너무너무, 너무너무너무/Noun, len=6, b=0, e=6, L),
            Word(는, 는/Josa, len=1, b=6, e=7),
-           Word(아이오아이, 아이오아이/Noun, len=5, b=7, e=12),
+           Word(아이오아이, 아이오아이/Noun, len=5, b=7, e=12, L),
            Word(의, 의/Josa, len=1, b=12, e=13),
-           Word(노래, 노래/Noun, len=2, b=13, e=15),
-           Word(이, 이/Adjective, len=1, b=15, e=16),
+           Word(노래, 노래/Noun, len=2, b=13, e=15, L),
+           Word(이, 이/Adjective, len=1, b=15, e=16, L),
            Word(ㅂ니다, ㅂ니다/Eomi, len=2, b=16, e=18),
            Word(EOS, EOS/EOS, len=0, b=18, e=18)]
 
 
-        >>> word_text = '봤어 영화관 가면 늘 보는 정도 인데 뭘'
-        >>> morph_text = '보/Verb+았어/Eomi 영화관/Noun 가/Verb+면/Eomi 늘/Adverb 보/Verb+는/Eomi 정도/Noun 인데/Josa 무엇/Pronoun+을/Josa'
-        >>> words = text_to_words(word_text, morph_text)
-        >>> words_ = flatten_words(words)
+        >>> word_text = '봤어  영화관 가면  늘  보는  정도 인데  뭘'
+        >>> morph_text = '보/Verb+았어/Eomi  영화관/Noun 가/Verb+면/Eomi  늘/Adverb  보/Verb+는/Eomi  정도/Noun 인데/Josa  무엇/Pronoun+을/Josa'
+        >>> flatten_words(text_to_words(word_text, morph_text))
 
         $ [Word(BOS, BOS/BOS, len=0, b=0, e=0),
-           Word(보, 보/Verb, len=1, b=0, e=1),
+           Word(보, 보/Verb, len=1, b=0, e=1, L),
            Word(았어, 았어/Eomi, len=2, b=1, e=2),
-           Word(영화관, 영화관/Noun, len=3, b=2, e=5),
+           Word(영화관, 영화관/Noun, len=3, b=2, e=5, L),
            Word(가, 가/Verb, len=1, b=5, e=6),
            Word(면, 면/Eomi, len=1, b=6, e=7),
-           Word(늘, 늘/Adverb, len=1, b=7, e=8),
-           Word(보, 보/Verb, len=1, b=8, e=9),
+           Word(늘, 늘/Adverb, len=1, b=7, e=8, L),
+           Word(보, 보/Verb, len=1, b=8, e=9, L),
            Word(는, 는/Eomi, len=1, b=9, e=10),
-           Word(정도, 정도/Noun, len=2, b=10, e=12),
+           Word(정도, 정도/Noun, len=2, b=10, e=12, L),
            Word(인데, 인데/Josa, len=2, b=12, e=14),
-           Word(무엇, 무엇/Pronoun, len=2, b=14, e=15),
+           Word(무엇, 무엇/Pronoun, len=2, b=14, e=15, L),
            Word(을, 을/Josa, len=1, b=15, e=15),
            Word(EOS, EOS/EOS, len=0, b=15, e=15)]
     """
@@ -144,27 +149,29 @@ def flatten_words(words):
         e = word.e
         if 'ㄱ' <= word.morph1[0] <= 'ㅎ':
             len1 -= 1
-        word0 = Word(word.morph0, word.morph0, None, word.tag0, None, len0, b, m)
-        word1 = Word(word.morph1, word.morph1, None, word.tag1, None, len1, m, e)
+        word0 = Word(word.morph0, word.morph0, None, word.tag0, None, len0, b, m, word.is_l)
+        word1 = Word(word.morph1, word.morph1, None, word.tag1, None, len1, m, e, False)
         words_.append(word0)
         words_.append(word1)
     return words_
 
-class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 len b e')):
+class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 len b e is_l')):
     """
     Usage
     -----
-        >>> word = Word('아이오아이', '아이오아이', None, 'Noun', None, 5)
+        >>> word = Word('아이오아이', '아이오아이', None, 'Noun', None, 5, 0, 5, True)
         >>> print(word)
 
-        $ Word(아이오아이, 아이오아이/Noun, len=5, b=0, e=5)
+        $ Word(아이오아이, 아이오아이/Noun, len=5, b=0, e=5, L)
 
-        >>> word = Word('가고있는', '가고있', '는', 'Verb', 'Eomi', 4, 2, 6)
+
+        >>> word = Word('가고있는', '가고있', '는', 'Verb', 'Eomi', 4, 2, 6, True)
         >>> print(word)
 
-        $ Word(가고있는, 가고있/Verb + 는/Eomi, len=4, b=2, e=6)
+        $ Word(가고있는, 가고있/Verb + 는/Eomi, len=4, b=2, e=6, L)
 
-        >>> word = Word('간', '가', 'ㄴ', 'Verb', 'Eomi', 1, 3, 4)
+
+        >>> word = Word('간', '가', 'ㄴ', 'Verb', 'Eomi', 1, 3, 4, False)
         >>> print(word)
 
         $ Word(간, 가/Verb + ㄴ/Eomi, len=1, b=3, e=4)
@@ -172,12 +179,13 @@ class Word(namedtuple('Word', 'word morph0 morph1 tag0 tag1 len b e')):
 
     def __repr__(self):
         return self.__str__()
+
     def __str__(self):
         if self.morph1:
-            args = (self.word, self.morph0, self.tag0, self.morph1, self.tag1, self.len, self.b, self.e)
-            return 'Word(%s, %s/%s + %s/%s, len=%d, b=%d, e=%d)' % args
-        args = (self.word, self.morph0, self.tag0, self.len, self.b, self.e)
-        return 'Word(%s, %s/%s, len=%d, b=%d, e=%d)' % args
+            args = (self.word, self.morph0, self.tag0, self.morph1, self.tag1, self.len, self.b, self.e, ', L' if self.is_l else '')
+            return 'Word(%s, %s/%s + %s/%s, len=%d, b=%d, e=%d%s)' % args
+        args = (self.word, self.morph0, self.tag0, self.len, self.b, self.e, ', L' if self.is_l else '')
+        return 'Word(%s, %s/%s, len=%d, b=%d, e=%d%s)' % args
 
 
 class WordDictionary:
@@ -201,18 +209,18 @@ class WordDictionary:
         >>> dictionary.lookup('아이오아이')
         $ [Word(아이오아이, 아이오아이/Noun, len=5, b=0, e=5)]
 
-        >>> dictionary.lookup('아이오아이', 5)
-        $ [Word(아이오아이, 아이오아이/Noun, len=5, b=5, e=10)]
+        >>> dictionary.lookup('아이오아이', 5, True)
+        $ [Word(아이오아이, 아이오아이/Noun, len=5, b=5, e=10, L)]
     """
 
     def __init__(self, tag_to_morphs):
         self.tag_to_morphs = tag_to_morphs
 
-    def lookup(self, morph, b=0):
+    def lookup(self, morph, b=0, is_l=False):
         n = len(morph)
         e = b + n
         words = [
-            Word(morph, morph, None, tag, None, n, b, e)
+            Word(morph, morph, None, tag, None, n, b, e, ls_l)
             for tag in self.get_tags(morph)]
         return words
 
@@ -278,14 +286,14 @@ class MorphemeDictionary(WordDictionary):
             surface_to_lemma = {}
         self.surface_to_lemma = surface_to_lemma
 
-    def lookup(self, word, b=0):
+    def lookup(self, word, b=0, is_l=False):
         n = len(word)
         e = b + n
         words = [
-            Word(word, word, None, tag, None, n, b, e)
+            Word(word, word, None, tag, None, n, b, e, is_l)
             for tag in self.get_tags(word)]
         for (m0, t0), (m1, t1) in self.lemmatize(word):
-            words.append(Word(word, m0, m1, t0, t1, n, b, e))
+            words.append(Word(word, m0, m1, t0, t1, n, b, e, is_l))
         return words
 
     def lemmatize(self, word):
