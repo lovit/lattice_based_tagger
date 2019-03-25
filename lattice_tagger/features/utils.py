@@ -34,7 +34,7 @@ def scan_features(word_morph_pairs, encoder, min_count=1, predefined_features=No
                 print()
                 print(e)
                 print('{} th pair'.format(i))
-                print('sent : {}'.format(sent))
+                print('word_text : {}'.format(word_text))
                 print('morph_text : {}'.format(morph_text), end='\n\n')
             continue
 
