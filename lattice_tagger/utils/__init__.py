@@ -8,6 +8,7 @@ from .dictionary import MorphemeDictionary
 from .dictionary import str_to_morphtag
 from .dictionary import text_to_words
 from .dictionary import flatten_words
+from .lemmatizer import analyze_morphology
 from .lookup import sentence_lookup
 from .lookup import sentence_lookup_as_graph
 from .lookup import sentence_lookup_as_begin_index
