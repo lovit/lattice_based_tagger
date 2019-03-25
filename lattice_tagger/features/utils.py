@@ -9,7 +9,7 @@ def scan_features(word_morph_pairs, encoder, min_count=1, predefined_features=No
     verbose=False, debug=False, flatten=False):
 
     """
-    >>> idx_to_feature, feature_to_idx, idx_to_count = scan_features(sent_morph_pairs, encoder, min_count)
+        >>> idx_to_feature, feature_to_idx, idx_to_count = scan_features(sent_morph_pairs, encoder, min_count)
     """
 
     if predefined_features is None:
@@ -54,6 +54,9 @@ def scan_features(word_morph_pairs, encoder, min_count=1, predefined_features=No
     return idx_to_feature, feature_to_idx, idx_to_count
 
 def scan_dictionary(sent_morph_pairs, min_count=1):
+    """
+        >>> tag_to_morphs, counter = scan_features(sent_morph_pairs, min_count)
+    """
     counter = defaultdict(int)
     for _, morph_text in sent_morph_pairs:
         morphs = [morph for eojeol in morph_text.split() for morph in eojeol.split('+')]
