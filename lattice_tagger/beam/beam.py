@@ -2,7 +2,9 @@ from ..tagset import *
 from lattice_tagger.utils import Word
 
 
-def beam_search(bindex, len_sent, chars, score_functions, beam_size=5, max_len=8, debug=False):
+def beam_search(bindex, chars, score_functions, beam_size=5, max_len=8, debug=False):
+
+    len_sent = len(chars)
 
     bos = Sequence([Word(BOS, BOS, None, BOS, None, 0, 0, 0, False)], 0)
     beam = Beam([[bos]], beam_size)
