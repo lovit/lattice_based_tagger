@@ -9,6 +9,22 @@ class BeamScoreFunction:
         raise NotImplemented('Inherit and implement score function')
 
 class BeamScoreFunctions:
+    """
+    Cumulate BeamScoreFunction instances
+
+        >>> funcs = BeamScoreFunctions(
+        >>>     RegularizationScore(unknown_penalty=-.1, known_preference=0.5),
+        >>>     MorphemePreferenceScore({Noun: {'아이오아이':2.2}}),
+        >>>     WordPreferenceScore({Adjective: {'입니다':3.3}}),
+        >>>     SimpleTrigramFeatureScore(coefficients, encoder)
+        >>> )
+
+        >>> sent = '너무너무너무는 아이오아이의 노래 입니다'
+        >>> chars = sent.replace(' ', '')
+        >>> words, bindex = sentence_lookup_as_begin_index(sent, eojeol_lookup)
+        >>> matures = beam_search(bindex, chars, funcs, beam_size=3, debug=False)
+    """
+
     def __init__(self, *functions):
         for func in functions:
             if not isinstance(func, BeamScoreFunction):

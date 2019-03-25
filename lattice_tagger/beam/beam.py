@@ -3,7 +3,19 @@ from lattice_tagger.utils import Word
 
 
 def beam_search(bindex, chars, score_functions, beam_size=5, max_len=8, debug=False):
+    """
+        >>> funcs = BeamScoreFunctions(
+        >>>     RegularizationScore(unknown_penalty=-.1, known_preference=0.5),
+        >>>     MorphemePreferenceScore({Noun: {'아이오아이':2.2}}),
+        >>>     WordPreferenceScore({Adjective: {'입니다':3.3}}),
+        >>>     SimpleTrigramFeatureScore(coefficients, encoder)
+        >>> )
 
+        >>> sent = '너무너무너무는 아이오아이의 노래 입니다'
+        >>> chars = sent.replace(' ', '')
+        >>> words, bindex = sentence_lookup_as_begin_index(sent, eojeol_lookup)
+        >>> matures = beam_search(bindex, chars, funcs, beam_size=3, debug=False)
+    """
     len_sent = len(chars)
 
     bos = Sequence([Word(BOS, BOS, None, BOS, None, 0, 0, 0, False)], 0)
