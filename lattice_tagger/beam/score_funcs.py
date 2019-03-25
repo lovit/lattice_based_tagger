@@ -1,12 +1,17 @@
 from ..tagset import *
+from .beam import Sequence
 
 
 class BeamScoreFunction:
     def __call__(self, sequence, word_k):
         return self.score(sequence, word_k)
 
+    def evaluate(self, seq):
+        raise NotImplemented('Inherit and implement evaluate function')
+
     def score(self, seq, word_k):
         raise NotImplemented('Inherit and implement score function')
+
 
 class BeamScoreFunctions:
     """
@@ -34,6 +39,12 @@ class BeamScoreFunctions:
     def __call__(self, sequence, word_k):
         return self.score(sequence, word_k)
 
+    def evaluate(self, seq):
+        score = 0
+        for func in self.funcs:
+            score += func.evaluate(seq)
+        return score
+
     def score(self, sequence, word_k):
         score = 0
         for func in self.funcs:
@@ -44,6 +55,9 @@ class RegularizationScore(BeamScoreFunction):
     def __init__(self, unknown_penalty=-0.1, known_preference=0.1):
         self.unknown_penalty = unknown_penalty
         self.known_preference = known_preference
+
+    def evaluate(self, seq):
+        return sum(self.score(None, word) for word in seq.sequences)
 
     def score(self, seq, word_k):
         if word_k.tag0 == Unk:
@@ -56,6 +70,9 @@ class MorphemePreferenceScore(BeamScoreFunction):
             tag_to_morph = {}
         self.tag_to_morph = tag_to_morph
 
+    def evaluate(self, seq):
+        return sum(self.score(None, word) for word in seq.sequences)
+
     def score(self, seq, word_k):
         score = self.tag_to_morph.get(word_k.tag0, {}).get(word_k.morph0, 0)
         if word_k.tag1 is not None:
@@ -67,6 +84,9 @@ class WordPreferenceScore(BeamScoreFunction):
         if tag_to_word is None:
             tag_to_word = {}
         self.tag_to_word = tag_to_word
+
+    def evaluate(self, seq):
+        return sum(self.score(None, word) for word in seq.sequences)
 
     def score(self, seq, word_k):
         return self.tag_to_word.get(word_k.tag0, {}).get(word_k.word, 0)
@@ -84,6 +104,16 @@ class SimpleTrigramFeatureScore(BeamScoreFunction):
         self.coefficients = coefficients
         self.encoder = encoder
         self.num_features = num_features
+
+    def evaluate(self, seq):
+        score = 0
+        seq_tmp = Sequence([seq.sequences[0]], 0)
+        for word in seq.sequences:
+            if word.tag0 == BOS or word.tag0 == EOS:
+                continue
+            increment = self.score(seq_tmp, word)
+            seq_tmp = seq_tmp.add(word, increment)
+        return seq_tmp.score
 
     def score(self, seq, word_k):
         word_i = None if len(seq.sequences) == 1 else seq.sequences[-2]

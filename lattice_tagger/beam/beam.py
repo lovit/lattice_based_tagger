@@ -19,6 +19,7 @@ def beam_search(bindex, chars, score_functions, beam_size=5, max_len=8, debug=Fa
     len_sent = len(chars)
 
     bos = Sequence([Word(BOS, BOS, None, BOS, None, 0, 0, 0, False)], 0)
+    eos = Word(EOS, EOS, None, EOS, None, 0, len_sent, len_sent, False)
     beam = Beam([[bos]], beam_size)
 
     for e in range(1, len_sent + 1):
@@ -55,7 +56,10 @@ def beam_search(bindex, chars, score_functions, beam_size=5, max_len=8, debug=Fa
             for grown in growns:
                 print(grown, end='\n\n')
 
-    return beam.beam[-1]
+    matures = beam.beam[-1]
+    matures = [m.add(eos, 0) for m in matures]
+    return matures
+
 
 class Beam:
     """
