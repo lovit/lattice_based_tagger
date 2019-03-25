@@ -1,5 +1,5 @@
 from ..tagset import *
-from lattice_tagger.utils import Word
+from lattice_tagger.dictionary import Word
 
 
 def beam_search(bindex, chars, score_functions, beam_size=5, max_len=8, debug=False):

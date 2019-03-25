@@ -1,9 +1,9 @@
 from collections import namedtuple
 from glob import glob
-from .utils import installpath
-from .utils import load_rules
-from .utils import left_space_tag
-from lattice_tagger.tagset import *
+from ..utils import installpath
+from ..utils import load_rules
+from ..utils import left_space_tag
+from ..tagset import *
 
 def str_to_morphtag(word):
     """

@@ -1,4 +1,3 @@
-from .data import WordMorphemePairs
 from .dictionary import BaseMorphemeDictionary
 from .dictionary import DemoMorphemeDictionary
 from .dictionary import DemoWordDictionary
@@ -15,8 +14,3 @@ from .lookup import sentence_lookup_as_begin_index
 from .lookup import LRLookup
 from .lookup import SubwordLookup
 from .lookup import WordLookup
-from .utils import installpath
-from .utils import load_rules
-from .utils import write_rules
-from .utils import left_space_tag
-from .utils import get_process_memory
