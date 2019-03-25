@@ -46,9 +46,14 @@ class WordMorphemePairs:
 
                 # cumulate eojeol & morphs to buffer
                 columns = line[:-1].split(self.sep)
-                eojeols.append(columns[0])
-                if len(columns) > self.col:
-                    morphs.append(columns[self.col])
+                if len(columns) <= self.col:
+                    continue
+
+                eojeol = columns[0]
+                morph = columns[self.col]
+                if eojeol.strip() and len(morph.strip()) >= 3:
+                    eojeols.append(eojeol)
+                    morphs.append(morph)
 
             if eojeols:
                 yield wrapup(eojeols, morphs)[:2]
