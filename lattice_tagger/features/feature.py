@@ -30,42 +30,46 @@ class SimpleTrigramEncoder(WordsEncoder):
     >>> text = '너무너무너무/Noun 는/Josa  아이오아이/Noun 의/Josa  노래/Noun 이/Adjective+ㅂ니다/Eomi'
     >>> words = text_to_words(text)
     >>> words_ = flatten_words(words)
-    >>> chars, is_l = left_space_tag(sent)
 
     >>> encoder = SimpleTrigramEncoder()
-    >>> encoder(words_)
+    >>> encoder.encode_sequence(words_)
+    >>> encoder.transform_sequence(words_)
+
+    >>> encoder.encode_word(word_i, word_j, word_k)
+    >>> encoder.transform_word(word_i, word_j, word_k)
+
     """
 
     def __init__(self, feature_dic=None):
         self.feature_dic = feature_dic
 
-    def encode_sequence(self, words, char_is_l=None):
+    def encode_sequence(self, words):
         if not self.is_trained():
             raise ValueError('Insert feature_dic first')
-        feature_seq = self.transform_sequence(words, char_is_l)
+        feature_seq = self.transform_sequence(words)
         idx_seq = [[self.feature_dic[f] for f in features] for features in feature_seq]
         return idx_seq
 
-    def encode_word(self, word_i, word_j, word_k, char_is_l=None):
-        features = self.transform_word(word_i, word_j, word_k, char_is_l)
+    def encode_word(self, word_i, word_j, word_k):
+        features = self.transform_word(word_i, word_j, word_k)
         idxs = [self.feature_dic[f] for f in features]
         return idxs
 
-    def transform_sequence(self, words, char_is_l=None):
+    def transform_sequence(self, words):
         n = len(words) - 2 # include BOS, EOS
         words_ = [None] + words
         feature_seq = []
         for word_i, word_j, word_k in zip(words_, words, words[1:-1]):
-            feature_seq.append(self.transform_word(word_i, word_j, word_k, char_is_l))
+            feature_seq.append(self.transform_word(word_i, word_j, word_k))
         return feature_seq
 
-    def transform_word(self, word_i, word_j, word_k, char_is_l=None):
-        features = trigram_encoder(word_i, word_j, word_k, char_is_l)
+    def transform_word(self, word_i, word_j, word_k):
+        features = trigram_encoder(word_i, word_j, word_k)
         if self.is_trained():
             features = self._filter(features)
         return features
 
-def trigram_encoder(word_i, word_j, word_k, char_is_l=None):
+def trigram_encoder(word_i, word_j, word_k):
     """
     trigram : (wi, ti), (wj, tj), (wk, tk)
     current positiion : k
@@ -93,12 +97,7 @@ def trigram_encoder(word_i, word_j, word_k, char_is_l=None):
     ]
 
     # unigram, word is L feature
-    if char_is_l is not None:
-        if word_k.b == word_k.e:
-            is_l_tag = False
-        else:
-            is_l_tag = char_is_l[word_k.b]
-        features.append((5, word_k.word, word_k.tag0, is_l_tag))
+    features.append((5, word_k.word, word_k.tag0, word_k.is_l))
 
     # unknown length feature
     if word_j.tag0 == Unk:
