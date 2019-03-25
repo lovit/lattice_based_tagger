@@ -4,7 +4,7 @@ from lattice_tagger.utils import Word
 
 def beam_search(bindex, len_sent, chars, score_functions, beam_size=5, max_len=8, debug=False):
 
-    bos = Sequence([Word(BOS, BOS, None, BOS, None, 0, 0, 0)], 0)
+    bos = Sequence([Word(BOS, BOS, None, BOS, None, 0, 0, 0, False)], 0)
     beam = Beam([[bos]], beam_size)
 
     for e in range(1, len_sent + 1):
@@ -20,7 +20,7 @@ def beam_search(bindex, len_sent, chars, score_functions, beam_size=5, max_len=8
             # prepare unknown Word
             if not expandes:
                 sub = chars[b:e]
-                expandes = [Word(sub, sub, None, Unk, None, e - b, b, e)]
+                expandes = [Word(sub, sub, None, Unk, None, e - b, b, e, False)]
 
             # score
             for immature in immatures:
