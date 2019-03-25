@@ -11,8 +11,6 @@ from .tagset import BOS
 from .tagset import EOS
 from .tagset import Unk
 from .utils import installpath
-from .utils import load_rules
-from .utils import write_rules
 from .utils import left_space_tag
 from .utils import get_process_memory
 from .utils import WordMorphemePairs

@@ -1,4 +1,3 @@
-from collections import defaultdict
 import json
 import os
 import psutil
@@ -6,31 +5,6 @@ import psutil
 
 installpath = os.path.dirname(os.path.realpath(__file__))
 
-
-## Operation for syllable transformation rules
-def rules_to_strf(rules):
-    return ['%s %s %s' % (key, l, r) for key, values in rules.items() for l, r in values]
-
-def load_rules(path):
-    rules = defaultdict(lambda: set())
-    with open(path, encoding='utf-8') as f:
-        for i, line in enumerate(f):
-            if not line.strip():
-                continue
-            columns = line.strip().split()
-            if len(columns) != 3:
-                print('Exception (%d line) : %s' % (i, line))
-                continue
-            surface, l, r = columns
-            rules[surface].add((l, r))
-    rules = {surface:tuple(canons) for surface, canons in rules.items()}
-    return rules
-
-def write_rules(rules, path):
-    with open(path, 'w', encoding='utf-8') as f:
-        for surface, canons in rules.items():
-            for l, r in canons:
-                f.write('%s %s %s\n' % (surface, l, r))
 
 def left_space_tag(sent):
     """

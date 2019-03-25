@@ -1,9 +1,9 @@
+from collections import defaultdict
 from collections import namedtuple
 from glob import glob
 
 from .lemmatizer import analyze_morphology
 from ..utils import installpath
-from ..utils import load_rules
 from ..utils import left_space_tag
 from ..tagset import *
 
@@ -332,8 +332,8 @@ class DemoMorphemeDictionary(MorphemeDictionary):
 
     def __init__(self):
         tag_to_morphs = load_dictionary('%s/resources/demo_morph/' % installpath)
-        surface_to_canon = load_rules('%s/resources/demo_morph/rules.json' % installpath)
-        super().__init__(tag_to_morphs, surface_to_canon)
+        rules = load_rules('%s/resources/demo_morph/rules' % installpath)
+        super().__init__(tag_to_morphs, rules)
 
 
 class BaseMorphemeDictionary(MorphemeDictionary):
@@ -343,8 +343,8 @@ class BaseMorphemeDictionary(MorphemeDictionary):
 
     def __init__(self):
         tag_to_morphs = load_dictionary('%s/resources/base/' % installpath)
-        surface_to_canon = load_rules('%s/resources/base/rules.json' % installpath)
-        super().__init__(tag_to_morphs, surface_to_canon)
+        rules = load_rules('%s/resources/base/rules' % installpath)
+        super().__init__(tag_to_morphs, rules)
 
 def load_dictionary(directory):
     def load(path):
@@ -358,3 +358,27 @@ def load_dictionary(directory):
     paths = glob('%s/*.txt' % directory)
     tag_to_morphs = {parse_tag(path):load(path) for path in paths}
     return tag_to_morphs
+
+def rules_to_strf(rules):
+    return ['%s %s %s' % (key, l, r) for key, values in rules.items() for l, r in values]
+
+def load_rules(path):
+    rules = defaultdict(lambda: set())
+    with open(path, encoding='utf-8') as f:
+        for i, line in enumerate(f):
+            if not line.strip():
+                continue
+            columns = line.strip().split()
+            if len(columns) != 3:
+                print('Exception (%d line) : %s' % (i, line))
+                continue
+            surface, l, r = columns
+            rules[surface].add((l, r))
+    rules = {surface:tuple(canons) for surface, canons in rules.items()}
+    return rules
+
+def write_rules(rules, path):
+    with open(path, 'w', encoding='utf-8') as f:
+        for surface, canons in rules.items():
+            for l, r in canons:
+                f.write('%s %s %s\n' % (surface, l, r))
