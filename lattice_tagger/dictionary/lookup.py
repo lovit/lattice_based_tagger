@@ -1,6 +1,6 @@
 from collections import namedtuple
-from lattice_tagger.utils import Word
-from lattice_tagger.utils import flatten_words
+from lattice_tagger.dictionary import Word
+from lattice_tagger.dictionary import flatten_words
 from lattice_tagger.tagset import *
 
 

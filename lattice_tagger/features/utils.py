@@ -1,8 +1,9 @@
 from collections import defaultdict
-from lattice_tagger.utils import get_process_memory
-from lattice_tagger.utils import text_to_words
-from lattice_tagger.utils import flatten_words
-from lattice_tagger.utils import left_space_tag
+from lattice_tagger import get_process_memory
+from lattice_tagger import left_space_tag
+from lattice_tagger.dictionary import text_to_words
+from lattice_tagger.dictionary import flatten_words
+
 
 
 def scan_features(word_morph_pairs, encoder, min_count=1, predefined_features=None,

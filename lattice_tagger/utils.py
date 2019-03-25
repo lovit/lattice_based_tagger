@@ -1,14 +1,41 @@
-from .dictionary import text_to_words
-from .dictionary import flatten_words
-from .utils import left_space_tag
-from .utils import get_process_memory
+import json
+import os
+import psutil
+
+
+installpath = os.path.dirname(os.path.realpath(__file__))
+
+
+def left_space_tag(sent):
+    """
+        >>> sent = '너무너무너무는 아이오아이의 노래입니다'
+        >>> chars, tags = left_space_tag(sent)
+        >>> chars = '너무너무너무는아이오아이의노래입니다'
+        >>> tags = [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]
+    """
+    chars = sent.replace(' ','')
+    tags = [1] + [0]*(len(chars) - 1)
+    idx = 0
+
+    for c in sent:
+        if c == ' ':
+            tags[idx] = 1
+        else:
+            idx += 1
+    return chars, tags
+
+def get_process_memory():
+    """It returns the memory usage of current process"""
+
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss / (1024 ** 3)
 
 
 class WordMorphemePairs:
     """
-    >>> train_data = SentMorphemePairs('../data/train.txt')
-    >>> for sent, morphs in train_data:
-            # do something
+        >>> train_data = SentMorphemePairs('../data/train.txt')
+        >>> for sent, morphs in train_data:
+                # do something
     """
 
     def __init__(self, filepath, morph_column=1, sep='\t', num_sents=-1):

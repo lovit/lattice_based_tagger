@@ -1,9 +1,12 @@
+from collections import defaultdict
 from collections import namedtuple
 from glob import glob
-from .utils import installpath
-from .utils import load_rules
-from .utils import left_space_tag
-from lattice_tagger.tagset import *
+
+from .lemmatizer import analyze_morphology
+from ..utils import installpath
+from ..utils import left_space_tag
+from ..tagset import *
+
 
 def str_to_morphtag(word):
     """
@@ -270,7 +273,7 @@ class MorphemeDictionary(WordDictionary):
         >>>     Adjective: {'있', '이'},
         >>>     Eomi: {'ㅂ니다', '습니다', '았습니다', '다', 'ㅆ다'}
         >>> }
-        >>> surface_to_lemma = {
+        >>> rules = {
         >>>     '했': (('하', '았'),),
         >>>     '있': (('이', 'ㅆ'),),
         >>>     '입': (('이', 'ㅂ'),)
@@ -288,11 +291,15 @@ class MorphemeDictionary(WordDictionary):
         $ [Word(아이오아이, 아이오아이/Noun, len=5, b=5, e=10)]
     """
 
-    def __init__(self, tag_to_morph, surface_to_lemma=None):
+    def __init__(self, tag_to_morph, rules=None):
         super().__init__(tag_to_morph)
-        if surface_to_lemma is None:
-            surface_to_lemma = {}
-        self.surface_to_lemma = surface_to_lemma
+        if rules is None:
+            rules = {}
+        self.rules = rules
+
+        self.verbs = tag_to_morph.get(Verb, {})
+        self.adjectives = tag_to_morph.get(Adjective, {})
+        self.eomis = tag_to_morph.get(Eomi, {})
 
     def lookup(self, word, b=0, is_l=False):
         n = len(word)
@@ -305,28 +312,7 @@ class MorphemeDictionary(WordDictionary):
         return words
 
     def lemmatize(self, word):
-        lemmas = []
-        for i in range(1, len(word)+1):
-            for stem, eomi in self._lemmatize(word[:i], word[i:]):
-                lemmas.append((stem, eomi))
-        return lemmas
-
-    def _lemmatize(self, l, r):
-        if self.check(l, Verb) and self.check(r, Eomi):
-            yield (l, Verb), (r, Eomi)
-        if self.check(l, Adjective) and self.check(r, Eomi):
-            yield (l, Adjective), (r, Eomi)
-        if not l[-1] in self.surface_to_lemma:
-            return None
-        l_pre = l[:-1]
-        for l_lemma, r_lemma in self.surface_to_lemma[l[-1]]:
-            stem = l_pre + l_lemma
-            eomi = r_lemma + r
-            if self.check(eomi, Eomi):
-                if self.check(stem, Verb):
-                    yield (stem, Verb), (eomi, Eomi)
-                if self.check(stem, Adjective):
-                    yield (stem, Adjective), (eomi, Eomi)
+        return analyze_morphology(word, self.verbs, self.adjectives, self.eomis, self.rules)
 
 
 class DemoWordDictionary(WordDictionary):
@@ -346,8 +332,8 @@ class DemoMorphemeDictionary(MorphemeDictionary):
 
     def __init__(self):
         tag_to_morphs = load_dictionary('%s/resources/demo_morph/' % installpath)
-        surface_to_canon = load_rules('%s/resources/demo_morph/rules.json' % installpath)
-        super().__init__(tag_to_morphs, surface_to_canon)
+        rules = load_rules('%s/resources/demo_morph/rules' % installpath)
+        super().__init__(tag_to_morphs, rules)
 
 
 class BaseMorphemeDictionary(MorphemeDictionary):
@@ -357,8 +343,8 @@ class BaseMorphemeDictionary(MorphemeDictionary):
 
     def __init__(self):
         tag_to_morphs = load_dictionary('%s/resources/base/' % installpath)
-        surface_to_canon = load_rules('%s/resources/base/rules.json' % installpath)
-        super().__init__(tag_to_morphs, surface_to_canon)
+        rules = load_rules('%s/resources/base/rules' % installpath)
+        super().__init__(tag_to_morphs, rules)
 
 def load_dictionary(directory):
     def load(path):
@@ -372,3 +358,27 @@ def load_dictionary(directory):
     paths = glob('%s/*.txt' % directory)
     tag_to_morphs = {parse_tag(path):load(path) for path in paths}
     return tag_to_morphs
+
+def rules_to_strf(rules):
+    return ['%s %s %s' % (key, l, r) for key, values in rules.items() for l, r in values]
+
+def load_rules(path):
+    rules = defaultdict(lambda: set())
+    with open(path, encoding='utf-8') as f:
+        for i, line in enumerate(f):
+            if not line.strip():
+                continue
+            columns = line.strip().split()
+            if len(columns) != 3:
+                print('Exception (%d line) : %s' % (i, line))
+                continue
+            surface, l, r = columns
+            rules[surface].add((l, r))
+    rules = {surface:tuple(canons) for surface, canons in rules.items()}
+    return rules
+
+def write_rules(rules, path):
+    with open(path, 'w', encoding='utf-8') as f:
+        for surface, canons in rules.items():
+            for l, r in canons:
+                f.write('%s %s %s\n' % (surface, l, r))
