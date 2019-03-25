@@ -53,14 +53,16 @@ def scan_features(word_morph_pairs, encoder, min_count=1, predefined_features=No
 
     return idx_to_feature, feature_to_idx, idx_to_count
 
-def scan_dictionary(sent_morph_pairs, min_count=1):
+def scan_dictionary(word_morph_pairs, min_count=1):
     """
-        >>> tag_to_morphs, counter = scan_features(sent_morph_pairs, min_count)
+        >>> tag_to_morphs, counter = scan_dictionary(word_morph_pairs, min_count)
     """
     counter = defaultdict(int)
-    for _, morph_text in sent_morph_pairs:
-        morphs = [morph for eojeol in morph_text.split() for morph in eojeol.split('+')]
+    for _, morph_text in word_morph_pairs:
+        morphs = [morph.strip() for eojeol in morph_text.split() for morph in eojeol.split('+')]
         for morph in morphs:
+            if len(morph) < 3:
+                continue
             counter[morph] += 1
     counter = {k:v for k,v in counter.items() if v >= min_count}
     counter = {tuple(k.split('/',1)):v for k,v in counter.items()}
