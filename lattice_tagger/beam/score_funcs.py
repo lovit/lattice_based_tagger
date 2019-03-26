@@ -1,3 +1,5 @@
+import numpy as np
+
 from ..tagset import *
 from .beam import Sequence
 
@@ -113,7 +115,7 @@ class SimpleTrigramFeatureScore(BeamScoreFunction):
         self.num_features = len(encoder.feature_dic)
 
         if coefficients is None:
-            coefficients = [0] * self.num_features
+            coefficients = np.zeros(self.num_features)
 
         if len(coefficients) != self.num_features:
             raise ValueError('Encoder and coefficients have different size features')
@@ -136,7 +138,7 @@ class SimpleTrigramFeatureScore(BeamScoreFunction):
         word_i = None if len(seq.sequences) == 1 else seq.sequences[-2]
         word_j = seq.sequences[-1]
         feature_idxs = self.encoder.encode_word(word_i, word_j, word_k)
-        score = 0
-        for idx in feature_idxs:
-            score += self.coefficients[idx]
-        return score
+        if not feature_idxs:
+            return 0
+        feature_idxs = np.asarray(feature_idxs, dtype=np.int)
+        return self.coefficients[feature_idxs].sum()
