@@ -65,7 +65,7 @@ class Tagger:
         # TODO
         self.score_funcs = score_funcs
 
-    def tag(self, sent, beam_size=3, ensure_normalize=True, debug=False):
+    def tag(self, sent, beam_size=5, ensure_normalize=True, debug=False):
         if not ensure_normalize:
             # TODO normalize
             sent = sent
