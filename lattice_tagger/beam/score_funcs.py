@@ -54,7 +54,7 @@ class BeamScoreFunctions:
         return score
 
 class RegularizationScore(BeamScoreFunction):
-    def __init__(self, unknown_penalty=-0.1, known_preference=0.1, syllable_penalty=-0.2):
+    def __init__(self, unknown_penalty=-0.1, known_preference=0.2, syllable_penalty=-0.2):
         self.unknown_penalty = unknown_penalty
         self.known_preference = known_preference
         self.syllable_penalty = syllable_penalty
@@ -65,7 +65,7 @@ class RegularizationScore(BeamScoreFunction):
     def score(self, seq, word_k):
         value = 0
         if word_k.tag0 == Unk:
-            value += self.unknown_penalty
+            value += self.unknown_penalty * (word_k.len + 0.1)
         else:
             value += (self.known_preference * word_k.len)
         if word_k.len == 1 and word_k.tag0 == Noun:
