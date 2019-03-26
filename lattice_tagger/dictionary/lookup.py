@@ -24,10 +24,12 @@ def sentence_lookup(sent, eojeol_lookup):
         >>> sent = '너무너무너무는 아이오아이의 노래입니다'
         >>> sentence_lookup(sent, eojeol_lookup)
 
-        $ [Word(너무너무너무는, 너무너무너무/Noun + 는/Josa, len=7, b=0, e=7, L),
+        $ [Word(BOS, BOS/BOS, len=0, b=0, e=0)
+           Word(너무너무너무는, 너무너무너무/Noun + 는/Josa, len=7, b=0, e=7, L),
            Word(아이오아이의, 아이오아이/Noun + 의/Josa, len=6, b=7, e=13, L),
            Word(노래, 노래/Noun, len=2, b=13, e=15, L),
-           Word(입니다, 이/Adjective + ㅂ니다/Eomi, len=3, b=15, e=18)]
+           Word(입니다, 이/Adjective + ㅂ니다/Eomi, len=3, b=15, e=18),
+           Word(EOS, EOS/EOS, len=0, b=18, e=18)]
 
         >>> eojeol_lookup = WordLookup(dictionary)
         >>> sentence_lookup(sent, eojeol_lookup)
@@ -47,11 +49,16 @@ def sentence_lookup(sent, eojeol_lookup):
            Word(입니다, 이/Adjective + ㅂ니다/Eomi, len=4, b=15, e=18)]
     """
 
+    n = len(sent.replace(' ', ''))
+    BOS_word = Word(BOS, BOS, None, BOS, None, 0, 0, 0, False)
+    EOS_word = Word(EOS, EOS, None, EOS, None, 0, n, n, False)
+
     offset = 0
-    nodes = []
+    nodes = [BOS_word]
     for eojeol in sent.split():
         nodes += eojeol_lookup(eojeol, offset)
         offset += len(eojeol)
+    nodes.append(EOS_word)
     return nodes
 
 
@@ -91,7 +98,7 @@ class SubwordLookup(EojeolLookup):
 
 class WordLookup(EojeolLookup):
     def __init__(self, dictionary, prefer_exact_match=True, standalones=None, max_len=-1, flatten=False):
-        if not hasattr(dictionary, 'surface_to_lemma'):
+        if not hasattr(dictionary, 'rules'):
             raise ValueError('dictionary must be MorphemeDictionary')
 
         if standalones is None:
@@ -324,8 +331,8 @@ def sentence_lookup_as_graph(sent, eojeol_lookup):
     n = len(sent.replace(' ',''))
     words, bindex = sentence_lookup_as_begin_index(sent, eojeol_lookup)
 
-    BOS_word = Word(BOS, BOS, None, BOS, None, 0, 0, 0, False)
-    EOS_word = Word(EOS, EOS, None, EOS, None, 0, n, n, False)
+    BOS_word = words[0]
+    EOS_word = words[-1]
 
     edges = [[BOS_word, word, 0] for word in bindex[closest(0, n, bindex)]]
     for words_in_b in bindex:
@@ -360,8 +367,8 @@ def sentence_lookup_as_begin_index(sent, eojeol_lookup):
     words = sentence_lookup(sent, eojeol_lookup)
 
     # if there exist no word in dictionary
-    if not words:
-        return [], []
+    if len(words) <= 2:
+        return words, []
 
     bindex = [[] for _ in range(n)]
     for word in words:
