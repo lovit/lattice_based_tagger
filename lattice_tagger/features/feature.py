@@ -9,6 +9,10 @@ class WordsEncoder:
     def is_trained(self):
         return self.feature_dic is not None
 
+    def set_feature_dic(self, feature_dic):
+        self.feature_dic = feature_dic
+        return self
+
     def encode_sequence(self, words, *args):
         raise NotImplemented('Inherit WordsEncoder and implement encode_sequence function')
 
