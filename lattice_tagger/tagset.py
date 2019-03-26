@@ -1,5 +1,6 @@
 Noun = 'Noun'
 Pronoun = 'Pronoun'
+Number = 'Number'
 Josa = 'Josa'
 Adjective = 'Adjective'
 Verb = 'Verb'
