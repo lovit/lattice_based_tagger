@@ -92,18 +92,29 @@ class WordPreferenceScore(BeamScoreFunction):
         return self.tag_to_word.get(word_k.tag0, {}).get(word_k.word, 0)
 
 class SimpleTrigramFeatureScore(BeamScoreFunction):
-    def __init__(self, coefficients, encoder):
+    def __init__(self, encoder=None, coefficients=None):
+        self.set_encoder(encoder, coefficients)
+
+    def set_encoder(self, encoder, coefficients=None):
+        if encoder is None:
+            self.num_features = 0
+            self.coefficients = None
+            self.encoder = encoder
+            return self
 
         if not encoder.is_trained():
             raise ValueError('Encoder must be trained first')
+        self.num_features = len(encoder.feature_dic)
 
-        num_features = len(coefficients)
-        if len(encoder.feature_dic) != num_features:
+        if coefficients is None:
+            coefficients = [0] * self.num_features
+
+        if len(coefficients) != self.num_features:
             raise ValueError('Encoder and coefficients have different size features')
 
         self.coefficients = coefficients
         self.encoder = encoder
-        self.num_features = num_features
+        return self
 
     def evaluate(self, seq):
         score = 0
