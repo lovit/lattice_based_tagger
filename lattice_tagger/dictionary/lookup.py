@@ -198,7 +198,8 @@ def lr_lookup(eojeol, dictionary, offset=0, prefer_exact_match=True):
         # special case : Noun + Josa
         l, r = eojeol[:i], eojeol[i:]
         if dictionary.check(l, Noun) and dictionary.check(r, Josa):
-            words.append(Word(eojeol, l, r, Noun, Josa, n, offset, e, is_l=True))
+            words.append(Word(l, l, None, Noun, None, n, offset, offset + i, is_l=True))
+            words.append(Word(r, r, None, Josa, None, n, offset + i, offset + n, is_l=False))
             continue
         lset = dictionary.lookup(eojeol[:i], offset, is_l=True)
         rset = dictionary.lookup(eojeol[i:], offset + i, is_l=False)
@@ -227,23 +228,35 @@ def morpheme_lookup(eojeol, dictionary, offset=0, prefer_exact_match=True, stand
     # Initialize
     n = len(eojeol)
 
-    if standalones is None:
-        # Noun + Josa, Adjective / Verb + Eomi
-        standalones = [Noun, Adverb, Exclamation, Determiner, Number]
-
     if max_len <= 0:
         max_len = n
 
     # eojeol exact match
-    words = dictionary.lookup(eojeol, offset, is_l=True)
+    words = lr_lookup(eojeol, dictionary, offset, prefer_exact_match=False)
+
     if prefer_exact_match and words:
         return words
 
     # prepare conjugation points
     noun_end = [0] * (n + 1)
 
+    if standalones is None:
+        # Noun + Josa, Adjective / Verb + Eomi
+        standalones = [Noun, Adverb, Exclamation, Determiner, Number]
+
+    # check L + R
+    for i in range(1, n):
+        l, r = eojeol[:i], eojeol[i:]
+        if dictionary.check(l, Noun) and dictionary.check(r, Josa):
+            words.append(Word(l, l, None, Noun, None, i, offset, offset + i, True))
+            words.append(Word(r, r, None, Josa, None, i, offset + i, offset + n, False))
+            continue
+        if dictionary.check(l, Noun) and dictionary.check(r, Josa):
+            words.append(Word(l, l, None, Noun, None, i, offset, offset + i, True))
+            words.append(Word(r, r, None, Josa, None, i, offset + i, offset + n, False))
+
     # check loop
-    for b in range(n):
+    for b in range(1, n):
         is_l = (b == 0)
         for e in range(b+1, min(b+max_len, n) + 1):
             sub = eojeol[b:e]
