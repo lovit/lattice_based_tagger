@@ -52,17 +52,23 @@ class BeamScoreFunctions:
         return score
 
 class RegularizationScore(BeamScoreFunction):
-    def __init__(self, unknown_penalty=-0.1, known_preference=0.1):
+    def __init__(self, unknown_penalty=-0.1, known_preference=0.1, syllable_penalty=-0.2):
         self.unknown_penalty = unknown_penalty
         self.known_preference = known_preference
+        self.syllable_penalty = syllable_penalty
 
     def evaluate(self, seq):
         return sum(self.score(None, word) for word in seq.sequences)
 
     def score(self, seq, word_k):
+        value = 0
         if word_k.tag0 == Unk:
-            return self.unknown_penalty
-        return self.known_preference * word_k.len
+            value += self.unknown_penalty
+        else:
+            value += (self.known_preference * word_k.len)
+        if word_k.len == 1 and word_k.tag0 == Noun:
+            value += self.syllable_penalty
+        return value
 
 class MorphemePreferenceScore(BeamScoreFunction):
     def __init__(self, tag_to_morph=None):
