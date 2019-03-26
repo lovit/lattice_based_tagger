@@ -4,7 +4,7 @@ from ..beam import RegularizationScore
 from ..beam import SimpleTrigramFeatureScore
 from ..dictionary import BaseMorphemeDictionary
 from ..dictionary import sentence_lookup_as_begin_index
-from ..dictionary import LRLookup, SubwordLookup, WordLookup
+from ..dictionary import LRLookup, WordLookup, MorphemeLookup
 
 
 class Tagger:
@@ -57,7 +57,7 @@ class Tagger:
         # set lookup function
         # if isinstance(lookup, str):
         # TODO
-        eojeol_lookup = SubwordLookup(dictionary, flatten=False)
+        eojeol_lookup = MorphemeLookup(dictionary, flatten=False)
 
         self.eojeol_lookup = eojeol_lookup
 
