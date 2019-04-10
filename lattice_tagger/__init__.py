@@ -18,3 +18,5 @@ from .utils import WordMorphemePairs
 from . import beam
 from . import dictionary
 from . import features
+from . import tagger
+from . import trainer

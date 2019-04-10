@@ -1,3 +1,5 @@
+import numpy as np
+
 from ..tagset import *
 from .beam import Sequence
 
@@ -52,17 +54,23 @@ class BeamScoreFunctions:
         return score
 
 class RegularizationScore(BeamScoreFunction):
-    def __init__(self, unknown_penalty=-0.1, known_preference=0.1):
+    def __init__(self, unknown_penalty=-0.1, known_preference=0.2, syllable_penalty=-0.2):
         self.unknown_penalty = unknown_penalty
         self.known_preference = known_preference
+        self.syllable_penalty = syllable_penalty
 
     def evaluate(self, seq):
         return sum(self.score(None, word) for word in seq.sequences)
 
     def score(self, seq, word_k):
+        value = 0
         if word_k.tag0 == Unk:
-            return self.unknown_penalty
-        return self.known_preference * word_k.len
+            value += self.unknown_penalty * (word_k.len + 0.1)
+        else:
+            value += (self.known_preference * word_k.len)
+        if word_k.len == 1 and word_k.tag0 == Noun:
+            value += self.syllable_penalty
+        return value
 
 class MorphemePreferenceScore(BeamScoreFunction):
     def __init__(self, tag_to_morph=None):
@@ -92,18 +100,29 @@ class WordPreferenceScore(BeamScoreFunction):
         return self.tag_to_word.get(word_k.tag0, {}).get(word_k.word, 0)
 
 class SimpleTrigramFeatureScore(BeamScoreFunction):
-    def __init__(self, coefficients, encoder):
+    def __init__(self, encoder=None, coefficients=None):
+        self.set_encoder(encoder, coefficients)
+
+    def set_encoder(self, encoder, coefficients=None):
+        if encoder is None:
+            self.num_features = 0
+            self.coefficients = None
+            self.encoder = encoder
+            return self
 
         if not encoder.is_trained():
             raise ValueError('Encoder must be trained first')
+        self.num_features = len(encoder.feature_dic)
 
-        num_features = len(coefficients)
-        if len(encoder.feature_dic) != num_features:
+        if coefficients is None:
+            coefficients = np.zeros(self.num_features)
+
+        if len(coefficients) != self.num_features:
             raise ValueError('Encoder and coefficients have different size features')
 
         self.coefficients = coefficients
         self.encoder = encoder
-        self.num_features = num_features
+        return self
 
     def evaluate(self, seq):
         score = 0
@@ -119,7 +138,7 @@ class SimpleTrigramFeatureScore(BeamScoreFunction):
         word_i = None if len(seq.sequences) == 1 else seq.sequences[-2]
         word_j = seq.sequences[-1]
         feature_idxs = self.encoder.encode_word(word_i, word_j, word_k)
-        score = 0
-        for idx in feature_idxs:
-            score += self.coefficients[idx]
-        return score
+        if not feature_idxs:
+            return 0
+        feature_idxs = np.asarray(feature_idxs, dtype=np.int)
+        return self.coefficients[feature_idxs].sum()

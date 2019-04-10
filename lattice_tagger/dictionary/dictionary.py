@@ -231,7 +231,7 @@ class WordDictionary:
         n = len(morph)
         e = b + n
         words = [
-            Word(morph, morph, None, tag, None, n, b, e, ls_l)
+            Word(morph, morph, None, tag, None, n, b, e, is_l)
             for tag in self.get_tags(morph)]
         return words
 
